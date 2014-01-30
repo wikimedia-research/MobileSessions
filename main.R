@@ -15,6 +15,10 @@ MobileSessions <- function(){
                   AND month >= ',start_month,'"
                   AND uri_path LIKE \"%Special:BannerRandom%\";"> ',mobile_file, sep = ""))
   
+  #Save it for potential debuggerating.
+  write(x = query_log,
+        file = file.path(getwd(),"query_log.txt"))
+  
   #After the data _has_ been grabbed, read it in
   data.df <- read_data(mobile_file)
   
