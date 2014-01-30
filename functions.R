@@ -20,11 +20,15 @@ read_data <- function(file){
                                               "text/html; charset=iso-8859-1",
                                               "text/html"),]
   
-  #Cut out hits from sites we don't care about
-  data.df <- data.df[grepl(pattern = pattern = "((wik(ipedia|isource|tionary|iversity|iquote|ibooks|inews|wikispecies|ivoyage))|(meta|commons|species|incubator)\\.m\\.wikimedia|wikidata|mediawik|boswp|wikpedia|wikipedie|wikiepdia)", x = data.df$URL_host),]
-  #Mash date strings together
+  #Cut out hits from sites we don't care about.
+  data.df <- data.df[grepl(pattern = "((wik(ipedia|isource|tionary|iversity|iquote|ibooks|inews|wikispecies|ivoyage))|(meta|commons|species|incubator)\\.m\\.wikimedia|wikidata|mediawik|boswp|wikpedia|wikipedie|wikiepdia)", x = data.df$URL_host),]
+  
+  #Cut out pages we don't care about.
+  data.df <- data.df[!grepl(pattern = "Special:(BannerRandom|CentralAutoLogin|RecordImpression)", x = data.df$URL_page),]
   
   #Hash IP and UA to come up with a (terrible) proxy for unique users.
+  
+  #Convert the date column
   
   
   
