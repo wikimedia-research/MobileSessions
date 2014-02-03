@@ -89,16 +89,16 @@ DataRetrieve <- function(){
   #Save the resulting data frame
   write.table(x = resulting.df,
               file = resulting_file,
-              quote = FALSE
-              sep = "\t"
+              quote = FALSE,
+              sep = "\t",
               row.names = FALSE)
   
   #Bind metadata into a data frame and save that, too.
   metadata.df <- data.frame(unique_IPs,total_IPs,rows,day)
   write.table(x = metadata.df,
               file = metadata_file,
-              quote = FALSE
-              sep = "\t"
+              quote = FALSE,
+              sep = "\t",
               row.names = FALSE)
   
   #After the data _has_ been grabbed, read it in
