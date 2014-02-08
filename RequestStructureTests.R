@@ -32,6 +32,27 @@ data.df <- read.delim(file.path(getwd(),"Data","redeemed_data.tsv"),
                                     "MIME_type",
                                     "UA"))
 
-#Scope the plotting
-plotting.fun <- function(){
+#Remove null entries (we really need to be escaping/removing tabs in UAs. Safari Mobile 4.0, I'm looking at you)
+data.df <- data.df[!data.df$IP == "",]
+
+#Initialise named vector
+named_vector <- numeric(10)
+
+#How many IPs do we start with?
+named_vector[1] <- length(unique(data.df$IP))
+names(named_vector)[1] <- "unique IPs"
+
+#Hash. Unfortunately digest() is not vectorised; I may implement it in a vectorised way if I get bored.
+for(i in seq_along(data.df)){
+  
+  #Use MD5, as the least resource-intensive non-broken hashing algorithm available.
+  data.df$IP[i] <- digest(object = paste(data.df$IP[i], data.df$lang[i], data.df$UA[i]),
+                          algo = "md5")
 }
+
+#How many uniques do we have now?
+named_vector[2] <- length(unique(data.df$IP))
+names(named_vector)[2] <- "unique clients"
+
+#Plot MIME types
+mime_plot <- ggplot(data = as.data.frame(table(data.df$MIME_type))
