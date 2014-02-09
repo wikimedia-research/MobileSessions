@@ -42,12 +42,26 @@ data.df <- data.df[!data.df$IP == "",]
 #Initialise named vector
 named_vector <- numeric(10)
 
+#How many entries do we start with?
+named_vector[1] <- nrow(data.df)
+names(named_vector)[1] <- "requestlog entries"
+
+#After filtering cache_status == "MISS"?
+data.df <- data.df[data.df$Cache_status == "hit",] #Eliminate non-hits
+named_vector[2] <- nrow(data.df)
+names(named_vector)[2] <- "requestlog entries minus varnish misses"
+
+#After filtering for HTTP status codes?
+data.df <- data.df[data.df$Host_status %in% c(200,304,302,301),] #Eliminate bad requests
+named_vector[3] <- nrow(data.df)
+names(named_vector)[3] <- "requestlog entries minus invalid http codes"
+
 #How many IPs do we start with?
-named_vector[1] <- length(unique(data.df$IP))
-names(named_vector)[1] <- "unique IPs"
+named_vector[4] <- length(unique(data.df$IP))
+names(named_vector)[4] <- "unique IPs"
 
 #Hash. Unfortunately digest() is not vectorised; I may implement it in a vectorised way if I get bored.
-for(i in seq_along(data.df)){
+for(i %in% 1:nrow(data.df)){
   
   #Use MD5, as the least resource-intensive non-broken hashing algorithm available.
   data.df$IP[i] <- digest(object = paste(data.df$IP[i], data.df$lang[i], data.df$UA[i]),
@@ -55,8 +69,23 @@ for(i in seq_along(data.df)){
 }
 
 #How many uniques do we have now?
-named_vector[2] <- length(unique(data.df$IP))
-names(named_vector)[2] <- "unique clients"
+named_vector[4] <- length(unique(data.df$IP))
+names(named_vector)[4] <- "unique clients"
 
 #Plot MIME types
-mime_plot <- ggplot(data = as.data.frame(table(data.df$MIME_type))
+mime_plot <- ggplot(data = as.data.frame(table(data.df$MIME_type)), aes(x = Var1, y = Freq)) +
+                      geom_bar(stat = "identity") + 
+                      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+                      labs(title = "Frequency of MIME types in Mobile requests\n(sample of 162,238 pages from 10,000 IPs",
+                           x = "MIME type",
+                           y = "Number of requests")
+
+#Save
+ggsave(file = file.path(getwd(),"Data","TestingData","MIME_types.png"),
+       plot = mime_plot)
+
+#Save a table version of this data just to be save
+write.table(x = as.data.frame(table(data.df$MIME_type)),
+            file = file.path(getwd(),"Data","TestingData","MIME_types.tsv"),
+            row.names = FALSE,
+            col.names = TRUE)
