@@ -61,7 +61,7 @@ named_vector[4] <- length(unique(data.df$IP))
 names(named_vector)[4] <- "unique IPs"
 
 #Hash. Unfortunately digest() is not vectorised; I may implement it in a vectorised way if I get bored.
-for(i %in% 1:nrow(data.df)){
+for(i in 1:nrow(data.df)){
   
   #Use MD5, as the least resource-intensive non-broken hashing algorithm available.
   data.df$IP[i] <- digest(object = paste(data.df$IP[i], data.df$lang[i], data.df$UA[i]),
