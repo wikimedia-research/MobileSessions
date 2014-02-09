@@ -56,9 +56,13 @@ data.df <- data.df[data.df$Host_status %in% c(200,304,302,301),] #Eliminate bad 
 named_vector[3] <- nrow(data.df)
 names(named_vector)[3] <- "requestlog entries minus invalid http codes"
 
+#How many referrers do we lose?
+named_vector[4] <- nrow(data.df[data.df$referrer == "-",])
+names(named_vector)[4] <- "Lost referers"
+
 #How many IPs do we start with?
-named_vector[4] <- length(unique(data.df$IP))
-names(named_vector)[4] <- "unique IPs"
+named_vector[5] <- length(unique(data.df$IP))
+names(named_vector)[5] <- "unique IPs"
 
 #Hash. Unfortunately digest() is not vectorised; I may implement it in a vectorised way if I get bored.
 for(i in 1:nrow(data.df)){
@@ -69,8 +73,8 @@ for(i in 1:nrow(data.df)){
 }
 
 #How many uniques do we have now?
-named_vector[4] <- length(unique(data.df$IP))
-names(named_vector)[4] <- "unique clients"
+named_vector[5] <- length(unique(data.df$IP))
+names(named_vector)[5] <- "unique clients"
 
 #Plot MIME types
 mime_plot <- ggplot(data = as.data.frame(table(data.df$MIME_type)), aes(x = Var1, y = Freq)) +
