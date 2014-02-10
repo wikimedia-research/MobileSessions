@@ -117,7 +117,7 @@ names(named_vector)[8] <- "referer loss in actual pageviews"
 data.df$timestamp <- as.numeric(strptime(x = data.df$timestamp, format = "%Y-%m-%dT%H:%M:%S"))
 
 #Check out how the 'mae west curve' hypothesis of session times works.
-maewest.ls <- lapply(X = unique(data.df$IP), FUN = function(x){
+maewest.vec <- unlist(lapply(X = unique(data.df$IP), FUN = function(x){
   
   #Instantiate initial dataset
   dataset <- data.df[data.df$IP == x,]$timestamp
@@ -141,10 +141,19 @@ maewest.ls <- lapply(X = unique(data.df$IP), FUN = function(x){
   
   return(to_return.vec)
   
-})
+}))
+
+#Generate quantiles
+quantiles <- quantile(maewest.vec, probs = seq(0,1,0.05))
+
+#Save quantiles
+write.table(x = as.data.frame(quantiles),
+            file = file.path(getwd(),"Data","TestingData","session_quantiles.tsv"),
+            row.names = TRUE,
+            col.names = TRUE)
 
 #Compress
-mae.df <- as.data.frame(table(unlist(maewest.ls)))
+mae.df <- as.data.frame(table(maewest.vec))
 
 #Generate a log10 plot and save
 log10_plot <- ggplot(data = mae.df, aes(log10(Freq))) +
