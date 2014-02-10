@@ -164,3 +164,28 @@ log10_plot <- ggplot(data = mae.df, aes(log10(Freq))) +
 
 ggsave(file = file.path(getwd(),"Data","TestingData","Session_log10.png"),
        plot = log10_plot)
+
+#What does the data in the bottom 30% look like?
+mae_30.df <- as.data.frame(table(maewest.vec[maewest.vec <= quantiles[names(quantiles) == "30%"]]))
+
+#Numericise
+mae_30.df$Var1 <- as.numeric(as.character(mae_30.df$Var1))
+
+#Plot
+plot_30 <- ggplot(data = mae_30.df, aes(Var1,Freq)) + 
+  geom_area() + 
+  labs(title = "Frequency of page requests, in seconds, after the 'first' request",
+       x = "Seconds",
+       y = "Number of requests")
+
+smoothed_plot <- ggplot(data = mae_30.df, aes(Var1,Freq)) + 
+  geom_smooth() + 
+  labs(title = "Frequency of page requests, in seconds, after the 'first' request\n with smoothing",
+       x = "Seconds",
+       y = "Number of requests")
+
+#Save
+ggsave(file = file.path(getwd(),"Data","TestingData","Session_bottom_30.png"),
+       plot = plot_30)
+ggsave(file = file.path(getwd(),"Data","TestingData","Session_bottom_smoothed.png"),
+       plot = smoothed_plot)
