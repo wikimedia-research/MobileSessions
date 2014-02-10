@@ -148,7 +148,7 @@ quantiles <- quantile(maewest.vec, probs = seq(0,1,0.05))
 
 #Save quantiles
 write.table(x = as.data.frame(quantiles),
-            file = file.path(getwd(),"Data","TestingData","session_quantiles.tsv"),
+            file = file.path(getwd(),"Data","TestingData","pageview_quantiles.tsv"),
             row.names = TRUE,
             col.names = TRUE)
 
@@ -158,11 +158,11 @@ mae.df <- as.data.frame(table(maewest.vec))
 #Generate a log10 plot and save
 log10_plot <- ggplot(data = mae.df, aes(log10(Freq))) +
   geom_area(stat = "bin", fill = "blue") +
-  labs(title = "Log10 plot of time elapsed between mobile pageviews in a session",
+  labs(title = "Log10 plot of time elapsed between a 'first' pageview and each successive pageview",
        x = "Log10",
        y = "Number of occurrences")
 
-ggsave(file = file.path(getwd(),"Data","TestingData","Session_log10.png"),
+ggsave(file = file.path(getwd(),"Data","TestingData","First_log10.png"),
        plot = log10_plot)
 
 #What does the data in the bottom 30% look like?
@@ -189,3 +189,49 @@ ggsave(file = file.path(getwd(),"Data","TestingData","Session_bottom_30.png"),
        plot = plot_30)
 ggsave(file = file.path(getwd(),"Data","TestingData","Session_bottom_smoothed.png"),
        plot = smoothed_plot)
+
+#What if we look at difference between reads, too?
+between_reads.vec <- unlist(lapply(X = unique(data.df$IP), FUN = function(x){
+  
+  #Instantiate initial dataset
+  dataset <- data.df[data.df$IP == x,]$timestamp
+  
+  #Order the incoming dataset from earliest to latest
+  dataset <- dataset[order(dataset)]
+  
+  #Instantiate object
+  to_return.vec <- numeric(length(dataset) - 1)
+  
+  
+  #Looping through, work out the setoff from the first pageview to the last.
+  for(i in seq_along(dataset)){
+    
+    if(i > 1){
+      
+      to_return.vec[i-1] <- dataset[i] - dataset[i-1]
+      
+    }
+  }
+  
+  return(to_return.vec)
+  
+}))
+between_reads.df <- as.data.frame(table(between_reads.vec))
+
+between_log10_plot <- ggplot(data = as.data.frame(table(between_reads.vec)), aes(log10(Freq))) +
+  geom_area(stat = "bin", fill = "blue") +
+  labs(title = "Log10 plot of time elapsed between each mobile pageview",
+       x = "Log10",
+       y = "Number of occurrences")
+
+ggsave(file = file.path(getwd(),"Data","TestingData","Session_log10.png"),
+       plot = log10_plot)
+
+#Generate quantiles
+between_quants <- quantile(between_reads.vec, probs = seq(0,1,0.05))
+
+#Save quantiles
+write.table(x = as.data.frame(between_quants),
+            file = file.path(getwd(),"Data","TestingData","between_quantiles.tsv"),
+            row.names = TRUE,
+            col.names = TRUE)
