@@ -19,6 +19,7 @@ options(StringsAsFactors = FALSE) #Remove factorising
 #Libaries
 library(digest) #Hash generation
 library(ggplot2) #Plotting
+library(plyr) #Generating intervals
 
 #Read in the test data
 data.df <- read.delim(file.path(getwd(),"Data","redeemed_data.tsv"),
@@ -65,16 +66,22 @@ named_vector[5] <- length(unique(data.df$IP))
 names(named_vector)[5] <- "unique IPs"
 
 #Hash. Unfortunately digest() is not vectorised; I may implement it in a vectorised way if I get bored.
+#I can still get some speed improvements by using a vector, mind.
+sha2vec <- character(nrow(data.df))
+
 for(i in 1:nrow(data.df)){
   
-  #Use MD5, as the least resource-intensive non-broken hashing algorithm available.
-  data.df$IP[i] <- digest(object = paste(data.df$IP[i], data.df$lang[i], data.df$UA[i]),
-                          algo = "md5")
+  #Use SHA256, as the least resource-intensive collision resistant algorithm I have access to.
+  sha2vec[i] <- digest(object = paste(data.df$IP[i], data.df$lang[i], data.df$UA[i]),
+                          algo = "sha256")
 }
 
+#Add vector to data.df
+data.df$IP <- sha2vec
+
 #How many uniques do we have now?
-named_vector[5] <- length(unique(data.df$IP))
-names(named_vector)[5] <- "unique clients"
+named_vector[6] <- length(unique(data.df$IP))
+names(named_vector)[6] <- "unique clients"
 
 #Plot MIME types
 mime_plot <- ggplot(data = as.data.frame(table(data.df$MIME_type)), aes(x = Var1, y = Freq)) +
@@ -93,3 +100,58 @@ write.table(x = as.data.frame(table(data.df$MIME_type)),
             file = file.path(getwd(),"Data","TestingData","MIME_types.tsv"),
             row.names = FALSE,
             col.names = TRUE)
+
+#How many pageviews do we have with 'actual' MIME types?
+data.df <- data.df[data.df$MIME_type %in% c("text/html; charset=utf-8",
+                                            "text/html; charset=iso-8859-1",
+                                            "text/html; charset=UTF-8",
+                                            "text/html"),]
+named_vector[7] <- nrow(data.df)
+names(named_vector)[7] <- "'actual' pageviews"
+
+#How much referer loss is there?
+named_vector[8] <- nrow(data.df[data.df$referrer == "-",])
+names(named_vector)[8] <- "referer loss in actual pageviews"
+
+#Format the timestamp as a value in seconds.
+data.df$timestamp <- as.numeric(strptime(x = data.df$timestamp, format = "%Y-%m-%dT%H:%M:%S"))
+
+#Check out how the 'mae west curve' hypothesis of session times works.
+maewest.ls <- lapply(X = unique(data.df$IP), FUN = function(x){
+  
+  #Instantiate initial dataset
+  dataset <- data.df[data.df$IP == x,]$timestamp
+  
+  #Order the incoming dataset from earliest to latest
+  dataset <- dataset[order(dataset)]
+  
+  #Instantiate object
+  to_return.vec <- numeric(length(dataset) - 1)
+  
+  
+  #Looping through, work out the setoff from the first pageview to the last.
+  for(i in seq_along(dataset)){
+    
+    if(i > 1){
+      
+      to_return.vec[i-1] <- dataset[i] - dataset[1]
+      
+    }
+  }
+  
+  return(to_return.vec)
+  
+})
+
+#Compress
+mae.df <- as.data.frame(table(unlist(maewest.ls)))
+
+#Generate a log10 plot and save
+log10_plot <- ggplot(data = mae.df, aes(log10(Freq))) +
+  geom_area(stat = "bin", fill = "blue") +
+  labs(title = "Log10 plot of time elapsed between mobile pageviews in a session",
+       x = "Log10",
+       y = "Number of occurrences")
+
+ggsave(file = file.path(getwd(),"Data","TestingData","Session_log10.png"),
+       plot = log10_plot)
