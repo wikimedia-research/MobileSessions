@@ -3,9 +3,10 @@
 #SELECT db1.dt,
 #db1.ip,
 #db1.cache_status,
-#db1.host_status,
+#db1.http_status,
 #db1.uri_host,
 #db1.uri_path,
+#db1.uri_query,
 #db1.referer,
 #db1.accept_language,
 #db1.content_type,
@@ -32,6 +33,7 @@ data.df <- read.delim(file.path(getwd(),"Data","redeemed_data.tsv"),
                                     "Host_status",
                                     "URL_host",
                                     "URL_page",
+                                    "URL_query",
                                     "referrer",
                                     "lang",
                                     "MIME_type",
@@ -116,6 +118,12 @@ names(named_vector)[8] <- "referer loss in actual pageviews"
 #Format the timestamp as a value in seconds.
 data.df$timestamp <- as.numeric(strptime(x = data.df$timestamp, format = "%Y-%m-%dT%H:%M:%S"))
 
+RefererTest <- function(){
+  
+  data.df <- data.df[!data.df$referrer == "-",]
+  
+  
+}
 #Check out how the 'mae west curve' hypothesis of session times works.
 maewest.vec <- unlist(lapply(X = unique(data.df$IP), FUN = function(x){
   
@@ -218,7 +226,7 @@ between_reads.vec <- unlist(lapply(X = unique(data.df$IP), FUN = function(x){
 }))
 between_reads.df <- as.data.frame(table(between_reads.vec))
 
-between_log10_plot <- ggplot(data = as.data.frame(table(between_reads.vec)), aes(log10(Freq))) +
+between_log10_plot <- ggplot(data = between_reads.df, aes(log10(Freq))) +
   geom_area(stat = "bin", fill = "blue") +
   labs(title = "Log10 plot of time elapsed between each mobile pageview",
        x = "Log10",
@@ -226,6 +234,19 @@ between_log10_plot <- ggplot(data = as.data.frame(table(between_reads.vec)), aes
 
 ggsave(file = file.path(getwd(),"Data","TestingData","Session_log10.png"),
        plot = log10_plot)
+
+between_reads.df$between_reads.vec <- as.numeric(as.character(between_reads.df$between_reads.vec))
+
+between_smoothed <- ggplot(data = between_reads.df, aes(between_reads.vec,Freq)) + 
+  geom_smooth() + 
+  labs(title = "Frequency of page requests, in seconds, after the previous request,\n with smoothing",
+       x = "Seconds",
+       y = "Number of requests") +
+  scale_x_continuous(breaks = seq(0,84000,1000)) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  
+ggsave(file = file.path(getwd(),"Data","TestingData","Between_smoothed.png"),
+       plot = between_smoothed)
 
 #Generate quantiles
 between_quants <- quantile(between_reads.vec, probs = seq(0,1,0.05))
@@ -235,3 +256,16 @@ write.table(x = as.data.frame(between_quants),
             file = file.path(getwd(),"Data","TestingData","between_quantiles.tsv"),
             row.names = TRUE,
             col.names = TRUE)
+
+#70 percent is where it seems to cut off
+between_70 <- as.data.frame(table(between_reads.vec[between_reads.vec <= between_quants[names(between_quants) == "70%"]]))
+between_70$Var1 <- as.numeric(as.character(between_70$Var1))
+
+between_70_plot <- smoothed_plot <- ggplot(data = between_70, aes(Var1,Freq)) + 
+  geom_smooth() + 
+  labs(title = "Frequency of page requests, in seconds, \n with smoothing",
+       x = "Seconds",
+       y = "Number of requests")
+
+ggsave(file = file.path(getwd(),"Data","TestingData","Session_smoothed_70.png"),
+       plot = between_70_plot)
