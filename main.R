@@ -4,18 +4,19 @@ source("functions.R")
 
 MobileSessions <- function(){
   
+  #Read in data
+  data.df <- data_reader()
   
-  #If data has already been retrieved...
-  if(file.exists(returning_file)){
-    
-    
-    
-  } else {
-    
-    #Otherwise, retrieve the data.
-    DataRetrieve()
-    
-  }
+  #Check metadata
+  logger(data.df)
+  
+  #Conduct basic analysis and graphing
+  analysed.df <- analysis.fun(data.df)
+  
+  #Rework dataset
+  
+  
+  #Save to file
 }
 
 #Run

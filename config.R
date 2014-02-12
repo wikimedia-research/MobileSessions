@@ -1,13 +1,10 @@
 #Libraries
 library(digest)
+library(ggplot2)
 
 #Options
 options(scipen = 500) #Eliminate (effectively) scientific notation
 options(StringsAsFactors = FALSE) #Remove factorising
-
-#Variables
-start_year <- 2014
-start_month <- 1
 
 #Files
 mobile_file <- file.path(getwd(),"Data","mobile_data.tsv") #Address of the hive output file.

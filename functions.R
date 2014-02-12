@@ -1,24 +1,24 @@
-#Function for reading data
-read_data <- function(day){
+#Function for reading the data in.
+data_reader <- function(){
   
-  #Grab the data from hive
-  query_log <- system(paste('hive --auxpath /usr/lib/hcatalog/share/hcatalog/hcatalog-core-0.5.0-cdh4.3.1.jar --database wmf -e "
-                SELECT dt,
-                  ip,
-                  uri_host,
-                  uri_path,
-                  referer,
-                  accept_language,
-                  user_agent
-                FROM webrequest_mobile 
-                WHERE year >= ',start_year,'
-                  AND month >= ',start_month,'
-                  AND uri_path LIKE \'%Special:BannerRandom%\'
-                  AND referer != \'-\'
-                  AND day =',day,';"> ',mobile_file, sep = ""))
+  #Stick in a while loop to control for Hive occasionally ganking out.
+  while(file.exists(mobile_file) == FALSE){
+    
+    #Retrieve the IPs, save them to a table.
+    system("hive --auxpath /usr/lib/hcatalog/share/hcatalog/hcatalog-core-0.5.0-cdh4.3.1.jar --database wmf -e '
+      INSERT OVERWRITE TABLE ironholds.distinct_ip
+      SELECT dist_ip FROM (
+        SELECT ip AS distip, COUNT(*) as count FROM wmf.webrequest_mobile WHERE year = 2014 AND month = 1 AND day BETWEEN 23 AND 30 AND cache_status = \'HIT\' AND http_status IN (\'\') AND content_type IN (\'text/html\; charset=utf-8\',\'text/html\; charset=iso-8859-1\',\'text/html\; charset=UTF-8','text/html\') GROUP BY ip HAVING COUNT(*) >= 2)
+      ) sub1 LIMIT 10000;'"
+    )
+    
+    #retrieve the dataset as a whole, save it to file.
+    system()
+    
+  }
   
-  #Read in the data
-  data.df <- read.delim(file = mobile_file,
+  #Read in the file.
+  data.df <- read.delim(file.path(getwd(),"Data","redeemed_data.tsv"),
                         as.is = TRUE,
                         header = TRUE,
                         quote = "",
@@ -26,81 +26,47 @@ read_data <- function(day){
                                       "IP",
                                       "URL_host",
                                       "URL_page",
-                                      "referrer",
+                                      "URL_query",
+                                      "referer",
                                       "lang",
                                       "UA"))
   
-  #Kill the file to save space
-  file.remove(mobile_file)
+  #Concatenate URL
+  data.df$URL_host <- paste0(data.df$URL_host,data.df$URL_page,data.df$URL_query)
   
-  #Remove invalid entries
-  data.df <- data.df[!data.df$referrer == "-" | !data.df$UA == "-",]
+  #Generate SHA-256 unique hashes
+  hash <- character(nrow(data.df))
   
-  #Note number of IPs
-  IP_num <- length(unique(data.df$IP))
-  
-  #Randomly sample on an IP basis. Let's use 10,000
-  data.df <- data.df[data.df$IP %in% sample(unique(data.df$IP, 10000)),]
-  
-  #Hash IP, language and UA to come up with a (terrible) proxy for unique users.
-  data.df$unique_hash <- digest(x = paste(data.df$IP,data.df$lang, data.df$UA),
-                                algo = "md5")
-  
-  #Return both the data and the number of unique IPs
-  return(list(data.df,
-              IP_num))
-  
-}
-
-#Function that wraps around read_data to retrieve 20 days of info
-DataRetrieve <- function(){
-  
-  #Instantiate object to return
-  resulting.df <- data.frame()
-  
-  #Assume 20 days
-  unique_IPs <- numeric(20)
-  total_IPs <- numeric(20)
-  rows <- numeric(20)
-  day <- numeric(20)
-  
-  for(i in seq_along(20)){
+  for(i in seq_along(hash_vec)){
     
-    #Grab the data
-    data.ls <- read_data(date = i)
-    
-    #Note unique IPs
-    unique_IPs[i] <- length(unique(data.ls[[1]]$IP))
-    
-    #Note total unique IPs
-    total_IPs[i] <- data.df[[2]]
-    
-    #Note number of entries
-    rows[i] <- nrow(data.ls[[1]])
-    
-    #Note day
-    day[i] <- i
-    
-    #Sanitise data and save it
-    resulting.df <- cbind(resulting.df,data.ls[[1]][,c("timestamp","referrer","unique_hash")])
+    hash_vec[i] <- digest(object = paste(data.df$IP[i],data.df$lang[i],data.df$UA[i]), algo = "sha256")
     
   }
   
-  #Save the resulting data frame
-  write.table(x = resulting.df,
-              file = resulting_file,
-              quote = FALSE,
-              sep = "\t",
-              row.names = FALSE)
+  #Add the hash vector to the dataset, overwriting IP
+  data.df$IP <- hash
   
-  #Bind metadata into a data frame and save that, too.
-  metadata.df <- data.frame(unique_IPs,total_IPs,rows,day)
-  write.table(x = metadata.df,
-              file = metadata_file,
-              quote = FALSE,
-              sep = "\t",
-              row.names = FALSE)
+  #Convert timestamps to seconds
+  data.df$timestamp <- as.numeric(strptime(x = data.df$timestamp, format = "%Y-%m-%dT%H:%M:%S"))
   
-  #After the data _has_ been grabbed, read it in
-  data.df <- read_data(mobile_file)
+  #Strip unnecessary columns and rename
+  data.df <- data.df[,c("timestamp","IP","URL_host","referer")]
+  names(data.df) <- c("timestamp","hash","URL","referer")
+  
+  #Return
+  return(data.df)
+}
+
+#Extract metadata
+logger <- function(x){
+  
+  #Instantiate metadata object
+  metadata.vec <- numeric()
+  
+  #How many unique clients do we have?
+  
+  #How many pageviews does that come to?
+  
+  #How many have lost referrers?
+  
 }
