@@ -43,7 +43,7 @@ data.df <- read.delim(file.path(getwd(),"Data","redeemed_data.tsv"),
 data.df <- data.df[!data.df$IP == "",]
 
 #Initialise named vector
-named_vector <- numeric(10)
+named_vector <- numeric(8)
 
 #How many entries do we start with?
 named_vector[1] <- nrow(data.df)
@@ -269,3 +269,56 @@ between_70_plot <- smoothed_plot <- ggplot(data = between_70, aes(Var1,Freq)) +
 
 ggsave(file = file.path(getwd(),"Data","TestingData","Session_smoothed_70.png"),
        plot = between_70_plot)
+
+#Test IP hashing
+ip_test <- function(){
+        
+  #Open a connection to the RequestLog file
+  con <- gzfile("/a/squid/archive/sampled/sampled-1000.tsv.log-20140120.gz", open = "r")
+  
+  suppressWarnings({
+    
+    log_contents <- read.delim(file = con,
+                               sep = "\t",
+                               header = TRUE,
+                               as.is = TRUE,
+                               quote = "",
+                               col.names = c("squid","sequence_no","timestamp","servicetime","IP","status_code",
+                                             "reply_size","request_method","URL","squid_status","MIME","referer",
+                                             "x_forwarded","UA","lang","x_analytics"))
+  })
+  
+  #Close connection
+  close(con)
+  
+  #Restrict data to the things we actually care about
+  log_contents <- log_contents[,c("IP","lang","UA")]
+  log_contents <- log_contents[log_contents$IP %in% sample(unique(log_contents$IP),10000),]
+  
+  #Instantiate object to return
+  return_obj <- numeric()
+  
+  #How many unique IPs are there? Well, 10,000, but note it down
+  return_obj[1] <- length(unique(log_contents$IP))
+  names(return_obj)[1] <- "unique desktop IPs"
+  
+  #IP vector
+  ip.vec <- character(nrow(log_contents))
+  
+  #Hash
+  for(i in seq_along(ip.vec)){
+    
+    ip.vec[i] <- digest(object = paste(log_contents$IP[i],log_contents$lang[i],log_contents$UA[i]))
+    
+  }
+  
+  #How many unique values now?
+  return_obj[2] <- length(unique(ip.vec))
+  names(return_obj)[2] <- "unique desktop hashes"
+  
+  #Return
+  return(return_obj)
+}  
+
+#Bind the two together
+named_vector <- c(named_vector,ip_test())
