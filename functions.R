@@ -6,10 +6,11 @@ data_reader <- function(){
     
     #Retrieve the IPs, save them to a table.
     system("hive --auxpath /usr/lib/hcatalog/share/hcatalog/hcatalog-core-0.5.0-cdh4.3.1.jar --database wmf -e '
-      INSERT OVERWRITE TABLE ironholds.distinct_ip
-      SELECT dist_ip FROM (
-        SELECT ip AS distip, COUNT(*) as count FROM wmf.webrequest_mobile WHERE year = 2014 AND month = 1 AND day BETWEEN 23 AND 30 AND cache_status = \'HIT\' AND http_status IN (\'\') AND content_type IN (\'text/html\; charset=utf-8\',\'text/html\; charset=iso-8859-1\',\'text/html\; charset=UTF-8','text/html\') GROUP BY ip HAVING COUNT(*) >= 2)
-      ) sub1 LIMIT 10000;'"
+           set hive.mapred.mode = nonstrict;
+           INSERT OVERWRITE TABLE ironholds.distinct_ip
+           SELECT dist_ip FROM (
+           SELECT ip AS distip, COUNT(*) as count FROM wmf.webrequest_mobile WHERE year = 2014 AND month = 1 AND day BETWEEN 23 AND 30 AND cache_status = \'HIT\' AND http_status IN (\'\') AND content_type IN (\'text/html\; charset=utf-8\',\'text/html\; charset=iso-8859-1\',\'text/html\; charset=UTF-8','text/html\') GROUP BY ip HAVING COUNT(*) >= 2 ORDER BY rand())
+           ) sub1 LIMIT 10000;'"
     )
     
     #retrieve the dataset as a whole, save it to file.
@@ -57,16 +58,29 @@ data_reader <- function(){
   return(data.df)
 }
 
-#Extract metadata
-logger <- function(x){
+#Function for extracting and logging metadata
+logger <- function(){
   
   #Instantiate metadata object
-  metadata.vec <- numeric()
+  metadata.vec <- numeric(3)
   
   #How many unique clients do we have?
+  metadata.vec[1] <- length(data.df$hash)
+  names(metadata.vec)[i] <- "Unique client hashes"
   
   #How many pageviews does that come to?
+  metadata.vec[2] <- nrow(data.df)
+  names(metadata.vec)[2] <- "pageviews"
   
   #How many have lost referrers?
+  metadata.vec[3] <- nrow(data.df[data.df$referer == "-",])
+  names(metadata.vec)[3] <- "pageviews with no referer"
   
+  #Write to file
+  write.table(x = metadata.vec,
+              file = file.path(getwd(),"Data","metadata.tsv"),
+              quote = TRUE,
+              sep = "\t",
+              row.names = TRUE,
+              col.names = FALSE)
 }
