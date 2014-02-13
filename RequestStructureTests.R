@@ -43,7 +43,7 @@ data.df <- read.delim(file.path(getwd(),"Data","redeemed_data.tsv"),
 data.df <- data.df[!data.df$IP == "",]
 
 #Initialise named vector
-named_vector <- numeric(8)
+named_vector <- numeric(9)
 
 #How many entries do we start with?
 named_vector[1] <- nrow(data.df)
@@ -103,17 +103,26 @@ write.table(x = as.data.frame(table(data.df$MIME_type)),
             row.names = FALSE,
             col.names = TRUE)
 
+#How much referer loss is there?
+named_vector[7] <- nrow(data.df[data.df$referrer == "-" & data.df$URL_page == "/wiki/Special:BannerRandom",])
+names(named_vector)[7] <- "referer loss in Special:BannerRandom hits"
+
+
+named_vector[8] <- nrow(data.df[data.df$referrer == "-" & data.df$MIME_type %in% c("text/html; charset=utf-8",
+                                                                                  "text/html; charset=iso-8859-1",
+                                                                                  "text/html; charset=UTF-8",
+                                                                                  "text/html"),])
+names(named_vector)[8] <- "referer loss in actual pageviews"
+
 #How many pageviews do we have with 'actual' MIME types?
 data.df <- data.df[data.df$MIME_type %in% c("text/html; charset=utf-8",
                                             "text/html; charset=iso-8859-1",
                                             "text/html; charset=UTF-8",
                                             "text/html"),]
-named_vector[7] <- nrow(data.df)
-names(named_vector)[7] <- "'actual' pageviews"
+named_vector[9] <- nrow(data.df)
+names(named_vector)[9] <- "'actual' pageviews"
 
-#How much referer loss is there?
-named_vector[8] <- nrow(data.df[data.df$referrer == "-",])
-names(named_vector)[8] <- "referer loss in actual pageviews"
+
 
 #Format the timestamp as a value in seconds.
 data.df$timestamp <- as.numeric(strptime(x = data.df$timestamp, format = "%Y-%m-%dT%H:%M:%S"))
