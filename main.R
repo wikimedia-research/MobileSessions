@@ -1,7 +1,7 @@
 #Load necessary files
 source("config.R")
 source("functions.R")
-
+source("src/Intertime.cpp")
 MobileSessions <- function(){
   
   #Read in data
@@ -10,15 +10,9 @@ MobileSessions <- function(){
   #Check metadata
   logger()
   
-  #Conduct basic analysis and graphing
-  analysed.df <- analysis(data.df)
+  #Conduct basic analysis and graphing, rework and save
+  reworker(analysis())
   
-  #Conduct recursive tree analysis
-  tree.df <- tree_analysis(data.df)
-  
-  #Rework dataset
-  reworker(x = list(analysed.df,
-                    tree.df)) 
 }
 
 #Run

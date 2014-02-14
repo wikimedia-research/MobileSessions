@@ -1,6 +1,7 @@
 #Libraries
 library(digest)
 library(ggplot2)
+library(Rcpp)
 
 #Options
 options(scipen = 500) #Eliminate (effectively) scientific notation
