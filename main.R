@@ -1,7 +1,7 @@
 #Load necessary files
 source("config.R")
 source("functions.R")
-source("src/Intertime.cpp")
+sourceCpp("src/Intertime.cpp")
 MobileSessions <- function(){
   
   #Read in data
