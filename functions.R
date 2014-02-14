@@ -84,3 +84,33 @@ logger <- function(){
               row.names = TRUE,
               col.names = FALSE)
 }
+
+#Analysis function
+basic_analysis <- function(){
+  
+  #Intertime function
+  intertime <- function(x){
+    
+    #Split out timestamps
+    timestamps <- data.df$timestamp[data.df$hash == x,]
+    
+    #Order from earliest to latest
+    timestamps <- timestamps[order(timestamps)]
+    
+    #Run through C++
+    intervals <- intertime(x = timestamps)
+    
+    #Return
+    return(intervals)
+  }
+  
+  #Grab interval list
+  intervals.ls <- lapply(x = as.list(unique(data.df$)), FUN = intertime)
+  
+  #Save to an RData file for future screwin'-with.
+  save(intervals.ls, file = file.path(getwd(),"Data","intervaldata.RData"))
+  
+  #Unlist and summarise
+  aggregates.df <- as.data.frame(table(unlist(intervals.ls)))
+}
+
