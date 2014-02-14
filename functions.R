@@ -5,12 +5,12 @@ data_reader <- function(){
   while(file.exists(mobile_file) == FALSE){
     
     #Retrieve the IPs, save them to a table.
-    system("hive --auxpath /usr/lib/hcatalog/share/hcatalog/hcatalog-core-0.5.0-cdh4.3.1.jar --database wmf -e '
+    system("hive --auxpath /usr/lib/hcatalog/share/hcatalog/hcatalog-core-0.5.0-cdh4.3.1.jar --database wmf -e \"
            set hive.mapred.mode = nonstrict;
            INSERT OVERWRITE TABLE ironholds.distinct_ip
-           SELECT dist_ip FROM (
-           SELECT ip AS distip, COUNT(*) as count FROM wmf.webrequest_mobile WHERE year = 2014 AND month = 1 AND day BETWEEN 23 AND 30 AND cache_status = \'HIT\' AND http_status IN (\'\') AND content_type IN (\'text/html\; charset=utf-8\',\'text/html\; charset=iso-8859-1\',\'text/html\; charset=UTF-8','text/html\') GROUP BY ip HAVING COUNT(*) >= 2 ORDER BY rand())
-           ) sub1 LIMIT 10000;'"
+           SELECT distip FROM (
+           SELECT ip AS distip, COUNT(*) as count FROM wmf.webrequest_mobile WHERE year = 2014 AND month = 1 AND day BETWEEN 23 AND 30 AND cache_status = \'HIT\' AND http_status IN (200,301,302,304) AND content_type IN (\'text/html\\; charset=utf-8\',\'text/html\\; charset=iso-8859-1\',\'text/html\\; charset=UTF-8','text/html\') GROUP BY ip HAVING COUNT(*) >= 2 ORDER BY rand()
+           ) sub1 LIMIT 10000;\""
     )
     
     #retrieve the dataset as a whole, save it to file.
