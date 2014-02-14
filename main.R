@@ -8,15 +8,17 @@ MobileSessions <- function(){
   data.df <- data_reader()
   
   #Check metadata
-  logger(data.df)
+  logger()
   
   #Conduct basic analysis and graphing
-  analysed.df <- analysis.fun(data.df)
+  analysed.df <- analysis(data.df)
+  
+  #Conduct recursive tree analysis
+  tree.df <- tree_analysis(data.df)
   
   #Rework dataset
-  
-  
-  #Save to file
+  reworker(x = list(analysed.df,
+                    tree.df)) 
 }
 
 #Run
