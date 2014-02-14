@@ -89,7 +89,7 @@ logger <- function(){
 basic_analysis <- function(){
   
   #Intertime function
-  intertime <- function(x){
+  lapply_inter <- function(x){
     
     #Split out timestamps
     timestamps <- data.df$timestamp[data.df$hash == x,]
@@ -105,7 +105,7 @@ basic_analysis <- function(){
   }
   
   #Grab interval list
-  intervals.ls <- lapply(x = as.list(unique(data.df$)), FUN = intertime)
+  intervals.ls <- lapply(x = as.list(unique(data.df$)), FUN = lapply_inter)
   
   #Save to an RData file for future screwin'-with.
   save(intervals.ls, file = file.path(getwd(),"Data","intervaldata.RData"))
