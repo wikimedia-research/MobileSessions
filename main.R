@@ -2,6 +2,7 @@
 source("config.R")
 source("functions.R")
 sourceCpp("src/Intertime.cpp")
+sourceCpp("src/Totaltime.cpp")
 MobileSessions <- function(){
   
   #Read in data
