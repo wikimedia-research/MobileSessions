@@ -10,7 +10,7 @@ data_reader <- function(){
            set hive.mapred.mode = nonstrict;
            INSERT OVERWRITE TABLE ironholds.distinct_ip
            SELECT distip FROM (
-           SELECT ip AS distip, COUNT(*) as count FROM wmf.webrequest_mobile WHERE year = 2014 AND month = 1 AND day BETWEEN 23 AND 30 AND cache_status = \'HIT\' AND http_status IN (200,301,302,304) AND content_type IN (\'text/html\\; charset=utf-8\',\'text/html\\; charset=iso-8859-1\',\'text/html\\; charset=UTF-8','text/html\') GROUP BY ip HAVING COUNT(*) >= 2 ORDER BY rand()
+           SELECT ip AS distip, COUNT(*) as count FROM wmf.webrequest_mobile WHERE year = 2014 AND month = 1 AND day BETWEEN 23 AND 30 AND cache_status = \'HIT\' AND http_status IN (\'200\',\'301\',\'302\',\'304\') AND content_type IN (\'text/html\\; charset=utf-8\',\'text/html\\; charset=iso-8859-1\',\'text/html\\; charset=UTF-8','text/html\') GROUP BY ip HAVING COUNT(*) >= 2 ORDER BY rand()
            ) sub1 LIMIT 10000;\""
     )
     
@@ -31,7 +31,7 @@ data_reader <- function(){
   }
   
   #Read in the file.
-  data.df <- read.delim(file.path(getwd(),"Data","redeemed_data.tsv"),
+  data.df <- read.delim(file = mobile_file,
                         as.is = TRUE,
                         header = TRUE,
                         quote = "",
@@ -41,8 +41,8 @@ data_reader <- function(){
                                       "URL_page",
                                       "URL_query",
                                       "referer",
-                                      "lang",
-                                      "UA"))
+                                      "UA",
+                                      "lang"))
   
   #Concatenate URL
   data.df$URL_host <- paste0(data.df$URL_host,data.df$URL_page,data.df$URL_query)
