@@ -1,7 +1,8 @@
 #Function for reading the data in.
 data_reader <- function(){
   
-  #Stick in a while loop to control for Hive occasionally ganking out.
+  #Stick in a while loop to control for Hive occasionally ganking out.#
+  #I really, really need to build that hadoop/RHive vagrant instance and convince Ops we need that.
   while(file.exists(mobile_file) == FALSE){
     
     #Retrieve the IPs, save them to a table.
@@ -14,8 +15,19 @@ data_reader <- function(){
     )
     
     #retrieve the dataset as a whole, save it to file.
-    system()
-    
+    system("hive --auxpath /usr/lib/hcatalog/share/hcatalog/hcatalog-core-0.5.0-cdh4.3.1.jar --database wmf -e \"
+           SELECT
+            db1.timestamp,
+            db1.ip,
+            db1.uri_host,
+            db1.uri_path,
+            db1.uri_query,
+            db1.referer,
+            db1.user_agent,
+            db1.accept_language
+          FROM wmf.webrequest_mobile db1 INNER JOIN ironholds.distinct_ip db2 ON db1.ip = db2.ip
+          WHERE db1.year = 2014 AND db1.month = 1 AND db1.day BETWEEN 23 AND 30 AND db1.cache_status = \'HIT\'
+          AND db1.http_status IN (200,301,302,304) AND db1.content_type IN (\'text/html\\; charset=utf-8\',\'text/html\\; charset=iso-8859-1\',\'text/html\\; charset=UTF-8','text/html\'); > /data/mobile_data.tsv")
   }
   
   #Read in the file.
