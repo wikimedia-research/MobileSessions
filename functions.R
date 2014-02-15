@@ -90,7 +90,7 @@ logger <- function(){
   
   #Write to file
   write.table(x = metadata.vec,
-              file = file.path(getwd(),"Data","metadata.tsv"),
+              file = metadata_file,
               quote = TRUE,
               sep = "\t",
               row.names = TRUE,
