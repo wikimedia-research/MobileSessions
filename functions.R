@@ -117,7 +117,7 @@ basic_analysis <- function(){
   }
   
   #Grab interval list
-  intervals.ls <- lapply(x = as.list(unique(data.df$)), FUN = lapply_inter)
+  intervals.ls <- lapply(x = as.list(unique(data.df$hash)), FUN = lapply_inter)
   
   #Save to an RData file for future screwin'-with.
   save(intervals.ls, file = file.path(getwd(),"Data","intervaldata.RData"))
