@@ -126,3 +126,11 @@ basic_analysis <- function(){
   aggregates.df <- as.data.frame(table(unlist(intervals.ls)))
 }
 
+#Post-minimum-identification analysis
+post_min_analysis <- function(){
+  
+  #Read in resulting data
+  data.df <- read.delim(file = resulting_file,
+                        )
+
+}
