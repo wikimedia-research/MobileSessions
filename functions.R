@@ -57,7 +57,7 @@ data_reader <- function(){
   }
   
   #Add the hash vector to the dataset, overwriting IP
-  data.df$IP <- hash
+  data.df$IP <- hash_vec
   
   #Convert timestamps to seconds
   data.df$timestamp <- as.numeric(strptime(x = data.df$timestamp, format = "%Y-%m-%dT%H:%M:%S"))
