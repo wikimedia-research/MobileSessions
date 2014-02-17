@@ -8,7 +8,7 @@ NumericVector intertime(NumericVector x) {
   //Identify size of input object
   int input_size = x.size();
   
-  //Instantiate resulting object
+  //Instantiate output object
   NumericVector output_vector(input_size-1);
 
   //Loop over the data
