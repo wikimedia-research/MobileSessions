@@ -45,7 +45,7 @@ data_reader <- function(){
                                       "lang"))
   
   #Concatenate URL
-  data.df$URL_host <- paste(data.df$URL_host,data.df$URL_page,data.df$URL_query)
+  data.df$URL_host <- paste(data.df$URL_host,data.df$URL_page,data.df$URL_query,sep = "")
   
   #Generate SHA-256 unique hashes
   hash_vec <- character(nrow(data.df))
