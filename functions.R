@@ -104,7 +104,7 @@ basic_analysis <- function(){
   lapply_inter <- function(x){
     
     #Split out timestamps
-    timestamps <- data.df$timestamp[data.df$hash == x,]
+    timestamps <- data.df$timestamp[data.df$hash == x]
     
     #Order from earliest to latest
     timestamps <- timestamps[order(timestamps)]
@@ -117,7 +117,7 @@ basic_analysis <- function(){
   }
   
   #Grab interval list
-  intervals.ls <- lapply(x = as.list(unique(data.df$hash)), FUN = lapply_inter)
+  intervals.ls <- lapply(X = as.list(unique(data.df$hash)), FUN = lapply_inter)
   
   #Save to an RData file for future screwin'-with.
   save(intervals.ls, file = file.path(getwd(),"Data","intervaldata.RData"))
