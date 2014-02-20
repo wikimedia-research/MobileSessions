@@ -209,6 +209,8 @@ basic_analysis <- function(){
     scale_x_continuous(breaks = seq(0,3000,100), limits = c(0,3000))
   ggsave(file = file.path(getwd(),"Data","from_limited_smoothed.png"),
          plot = from_limited_plot)
+  
+  
 }
 
 #Post-minimum-identification analysis
