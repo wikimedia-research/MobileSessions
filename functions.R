@@ -59,6 +59,9 @@ data_reader <- function(){
   #Add the hash vector to the dataset, overwriting IP
   data.df$IP <- hash_vec
   
+  #Limit to those hashes with >1 article view
+  data.df <- data.df[data.df$hash %in% subset(as.data.frame(table(data.df$hash)), Freq > 1)$Var1,]
+  
   #Convert timestamps to seconds
   data.df$timestamp <- as.numeric(strptime(x = data.df$timestamp, format = "%Y-%m-%dT%H:%M:%S"))
   
