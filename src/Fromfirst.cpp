@@ -1,9 +1,8 @@
 #include <Rcpp.h>
-#include <vector>
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-NumericVector intertime(NumericVector x) {
+NumericVector fromfirst(NumericVector x) {
   
   //Identify size of input object
   int input_size = x.size();
@@ -17,8 +16,8 @@ NumericVector intertime(NumericVector x) {
   //Loop over the data
   for(int i = 1; i < input_size;++i){
     
-    //For each entry, the output value is [entry] minus [previous entry]
-    output_vector[i-1] = (x[i] - x[i-1]);
+    //For each entry, the output value is [entry] minus [first entry]
+    output_vector[i-1] = (x[i] - x[0]);
   }
   
   //Return
