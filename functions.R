@@ -116,10 +116,24 @@ basic_analysis <- function(){
     return(intervals)
   }
   
-  #Grab interval list
+  #From-first function
+  lapply_first <- function(x){
+    
+    #Split out timestamps
+    timestamps <- data.df$timestamp[data.df$hash == x]
+    
+    #Run through C++
+    first_intervals <- fromfirst(x = timestamps)
+    
+    #Return
+    return(first_intervals)
+    
+  }
+  
+  #Grab interval list and from-first list
   intervals.ls <- lapply(X = as.list(unique(data.df$hash)), FUN = lapply_inter)
   
-  #Save to an RData file for future screwin'-with.
+  #Save to RData file for future screwin'-with.
   save(intervals.ls, file = file.path(getwd(),"Data","intervaldata.RData"))
   
   #Unlist and summarise
@@ -155,6 +169,46 @@ basic_analysis <- function(){
     scale_x_continuous(breaks = seq(0,3000,100), limits = c(0,3000))
   ggsave(file = file.path(getwd(),"Data","limited_smoothed.png"),
          plot = limited_plot)
+  
+  #Grab from-first list
+  fromfirst.ls <- lapply(X = as.list(unique(data.df$hash)), FUN = lapply_first)
+  
+  #Save
+  save(fromfirst.ls, file = file.path(getwd(),"Data","fromfirst.RData"))
+  
+  #Unlist and summarise
+  from_aggs.df <- as.data.frame(table(unlist(fromfirst.ls)))
+  
+  #Numericise
+  from_aggs.df$Var1 <- as.numeric(as.character(from_aggs.df$Var1))
+  
+  #Generate a log10 plot and save
+  from_log10_plot <- ggplot(data = from_aggs.df, aes(log10(Freq))) +
+    geom_area(stat = "bin", fill = "blue") +
+    labs(title = "Log10 plot of time elapsed from first mobile web request",
+         x = "Log10",
+         y = "Number of occurrences")
+  ggsave(file = file.path(getwd(),"Data","from_log10.png"),
+         plot = from_log10_plot)
+  
+  #Smoothed plot
+  from_smooth_plot <- ggplot(data = from_aggs.df, aes(Var1,Freq)) + 
+    geom_smooth() + 
+    labs(title = "Time elapsed from first mobile web request\nunlimited range",
+         x = "Seconds",
+         y = "Number of requests")
+  ggsave(file = file.path(getwd(),"Data","from_smooth_plot.png"),
+         plot = from_smooth_plot)
+  
+  #Smoothed, limited plot
+  from_limited_plot <- ggplot(data = from_aggs.df, aes(Var1,Freq)) + 
+    geom_smooth() + 
+    labs(title = "Time elapsed from first mobile web request\nlimited range (0th to 10th percentile)",
+         x = "Seconds",
+         y = "Number of requests") +
+    scale_x_continuous(breaks = seq(0,3000,100), limits = c(0,3000))
+  ggsave(file = file.path(getwd(),"Data","from_limited_smoothed.png"),
+         plot = from_limited_plot)
 }
 
 #Post-minimum-identification analysis
