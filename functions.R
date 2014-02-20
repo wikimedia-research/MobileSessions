@@ -109,9 +109,6 @@ basic_analysis <- function(){
     #Split out timestamps
     timestamps <- data.df$timestamp[data.df$hash == x]
     
-    #Order from earliest to latest
-    timestamps <- timestamps[order(timestamps)]
-    
     #Run through C++
     intervals <- intertime(x = timestamps)
     
@@ -127,6 +124,37 @@ basic_analysis <- function(){
   
   #Unlist and summarise
   aggregates.df <- as.data.frame(table(unlist(intervals.ls)))
+  
+  #Change type
+  aggregates.df$Var1 <- as.numeric(as.character(aggregates.df$Var1))
+  
+  #Generate a log10 plot and save
+  log10_plot <- ggplot(data = aggregates.df, aes(log10(Freq))) +
+    geom_area(stat = "bin", fill = "blue") +
+    labs(title = "Log10 plot of inter-time periods between mobile web requests",
+         x = "Log10",
+         y = "Number of occurrences")
+  ggsave(file = file.path(getwd(),"Data","log10.png"),
+         plot = log10_plot)
+  
+  #Smoothed plot
+  smooth_plot <- ggplot(data = aggregates.df, aes(Var1,Freq)) + 
+    geom_smooth() + 
+    labs(title = "Inter-time period between mobile web requests\nunlimited range",
+         x = "Seconds",
+         y = "Number of requests")
+  ggsave(file = file.path(getwd(),"Data","smooth_plot.png"),
+         plot = smooth_plot)
+  
+  #Smoothed, limited plot
+  limited_plot <- ggplot(data = aggregates.df, aes(Var1,Freq)) + 
+    geom_smooth() + 
+    labs(title = "Inter-time period between mobile web requests\nlimited range (0th to 10th percentile)",
+         x = "Seconds",
+         y = "Number of requests") +
+    scale_x_continuous(breaks = seq(0,3000,100), limits = c(0,3000))
+  ggsave(file = file.path(getwd(),"Data","limited_smoothed.png"),
+         plot = limited_plot)
 }
 
 #Post-minimum-identification analysis
