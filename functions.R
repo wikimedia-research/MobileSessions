@@ -10,7 +10,7 @@ data_reader <- function(){
            set hive.mapred.mode = nonstrict;
            INSERT OVERWRITE TABLE ironholds.distinct_ip
            SELECT distip FROM (
-           SELECT ip AS distip, COUNT(*) as count FROM wmf.webrequest_mobile WHERE year = 2014 AND month = 1 AND day BETWEEN 23 AND 30 AND cache_status = \'hit\' AND http_status IN (\'200\',\'301\',\'302\',\'304\') AND content_type IN (\'text/html\\; charset=utf-8\',\'text/html\\; charset=iso-8859-1\',\'text/html\\; charset=UTF-8','text/html\') GROUP BY ip ORDER BY rand()
+           SELECT ip AS distip, COUNT(*) as count FROM wmf.webrequest_mobile WHERE year = 2014 AND month = 1 AND day BETWEEN 23 AND 30 AND cache_status = \'hit\' AND http_status IN (\'200\',\'301\',\'302\',\'304\') AND user_agent NOT IN (\'NativeHost\',\'ativeHost\') AND content_type IN (\'text/html\\; charset=utf-8\',\'text/html\\; charset=iso-8859-1\',\'text/html\\; charset=UTF-8','text/html\') GROUP BY ip ORDER BY rand()
            ) sub1 WHERE count >= 2 LIMIT 50000;\""
     )
     
@@ -26,7 +26,7 @@ data_reader <- function(){
             db1.user_agent,
             db1.accept_language
           FROM wmf.webrequest_mobile db1 INNER JOIN ironholds.distinct_ip db2 ON db1.ip = db2.ip
-          WHERE db1.year = 2014 AND db1.month = 1 AND db1.day BETWEEN 23 AND 30 AND db1.cache_status = \'hit\'
+          WHERE db1.year = 2014 AND db1.month = 1 AND db1.day BETWEEN 23 AND 30 AND db1.cache_status = \'hit\' AND user_agent NOT IN (\'NativeHost\',\'ativeHost\')
           AND db1.http_status IN (200,301,302,304) AND db1.content_type IN (\'text/html\\; charset=utf-8\',\'text/html\\; charset=iso-8859-1\',\'text/html\\; charset=UTF-8','text/html\');\" >",mobile_file))
   }
   
