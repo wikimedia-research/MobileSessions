@@ -210,7 +210,6 @@ basic_analysis <- function(){
   ggsave(file = file.path(getwd(),"Data","from_limited_smoothed.png"),
          plot = from_limited_plot)
   
-  
 }
 
 #Post-minimum-identification analysis
