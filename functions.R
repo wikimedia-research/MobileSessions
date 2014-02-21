@@ -44,6 +44,9 @@ data_reader <- function(){
                                       "UA",
                                       "lang"))
   
+  #Eliminate bots
+  data.df <- data.df[!grepl(x = data.df$UA, ignore.case = TRUE, pattern = bot_pattern),]
+  
   #Generate SHA-256 unique hashes
   hash_vec <- character(nrow(data.df))
   

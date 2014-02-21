@@ -11,3 +11,6 @@ options(StringsAsFactors = FALSE) #Remove factorising
 mobile_file <- file.path(getwd(),"Data","mobile_data.tsv") #Address of the hive output file.
 resulting_file <- file.path(getwd(),"Data","resulting_data.tsv") #Address of the save file.
 metadata_file <- file.path(getwd(),"Data","metadata.tsv") #Metadata about the run
+
+#Regex
+bot_pattern = "(bot|crawl(er)?|http(s?):)"
