@@ -24,9 +24,12 @@ int totaltime(NumericVector x, int local_minimum) {
     
   }
   
-  //Add a mean value to the output object to factor in the time period for the 'last' read
-  output_object += (output_object/output_size);
-  
+  //Solve for divide-by-zero error
+  if(output_object > 0){
+    
+    //Add a mean value to the output object to factor in the time period for the 'last' read
+    output_object += (output_object/output_size);
+  }
   //Return
   return output_object;
 }
