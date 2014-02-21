@@ -13,8 +13,8 @@ MobileSessions <- function(){
   logger()
   
   #Conduct basic analysis and graphing, rework and save
-  reworker(analysis())
-  
+  analysis()
+
 }
 
 #Run

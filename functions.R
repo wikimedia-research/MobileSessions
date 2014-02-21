@@ -226,4 +226,11 @@ post_min_analysis <- function(){
     
   }
   
+  #2 Standard Deviations
+  output.vec <- output.vec[output.vec <= 2*sd(output.vec)]
+  
+  #Dataframe it for ggplot2
+  output.df <- as.data.frame(output.vec)
+  output.df$Type <- "raw"
+  
 }
