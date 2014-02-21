@@ -215,8 +215,15 @@ basic_analysis <- function(){
 #Post-minimum-identification analysis
 post_min_analysis <- function(){
   
-  #Read in resulting data
-  data.df <- read.delim(file = resulting_file,
-                        )
-
+  #We saw 400-500 (450) as the local minimum. Cool!
+  #Instantiate output object
+  output.vec <- numeric(length(fromfirst.ls))
+  
+  for(i in seq_along(fromfirst.ls)){
+    
+    #Retrieve 'session time' and add it to the output vector.
+    output.vec[i] <- totaltime(x = fromfirst.ls[[i]], local_minimum = 450)
+    
+  }
+  
 }
