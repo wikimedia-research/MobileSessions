@@ -47,6 +47,9 @@ data_reader <- function(){
   #Eliminate bots
   data.df <- data.df[!grepl(x = data.df$UA, ignore.case = TRUE, pattern = bot_pattern),]
   
+  #Eliminate the Thai weirdness
+  data.df <- data.df[!data.df$UA %in% c("ativeHost","NativeHost"),]
+  
   #Generate SHA-256 unique hashes
   hash_vec <- character(nrow(data.df))
   
@@ -226,11 +229,41 @@ post_min_analysis <- function(){
     
   }
   
-  #2 Standard Deviations
-  output.vec <- output.vec[output.vec <= 2*sd(output.vec)]
+  #Remove zero entries (entries where all datapoints were above the local minimum)
+  output.vec <- output.vec[!output.vec == 0]
   
   #Dataframe it for ggplot2
   output.df <- as.data.frame(output.vec)
   output.df$Type <- "raw"
+  
+  #Log10 it
+  log10_totaltime <- ggplot(output.df,aes(Type,log10(output.vec))) + 
+    geom_boxplot() +
+    labs(title = "log10 plot of total mobile session times",
+         x = "Type",
+         y = "Log10 value")
+  
+  totaltime_density <- ggplot(output_sd.df,aes(output.vec)) + 
+    geom_density(aes(fill = Type)) +
+    labs(title = "log10 plot of total mobile session times",
+         x = "Seconds",
+         y = "Density") +
+    guides(fill=FALSE)
+  
+  #Remove entries more than 2SDs out
+  output_sd.df <- output.df[output.df$output.vec <= 2*sd(output.df$output.vec),]
+  log10_totaltime_sd <- ggplot(output_sd.df,aes(Type,log10(output.vec))) + 
+    geom_boxplot() +
+    labs(title = "log10 plot of total mobile session times",
+         x = "Type",
+         y = "Log10 value")
+  
+  #Density plot
+  totaltime_sd_density <- ggplot(output_sd.df,aes(output.vec)) + 
+    geom_density(aes(fill = Type)) +
+    labs(title = "log10 plot of total mobile session times",
+         x = "Type",
+         y = "Log10 value") +
+    guides(fill=FALSE)
   
 }

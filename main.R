@@ -3,6 +3,7 @@ source("config.R")
 source("functions.R")
 sourceCpp("src/Intertime.cpp")
 sourceCpp("src/Totaltime.cpp")
+sourceCpp("src/Fromfirst.cpp")
 
 MobileSessions <- function(){
   
