@@ -1,34 +1,31 @@
 #Function for reading the data in.
 data_reader <- function(){
   
-  #Stick in a while loop to control for Hive occasionally ganking out.#
   #I really, really need to build that hadoop/RHive vagrant instance and convince Ops we need that.
-  while(file.exists(mobile_file) == FALSE){
-    
-    #Retrieve the IPs, save them to a table.
-    system("hive --auxpath /usr/lib/hcatalog/share/hcatalog/hcatalog-core-0.5.0-cdh4.3.1.jar --database wmf -e \"
-           set hive.mapred.mode = nonstrict;
-           INSERT OVERWRITE TABLE ironholds.distinct_ip
-           SELECT distip FROM (
-           SELECT ip AS distip, COUNT(*) as count FROM wmf.webrequest_mobile WHERE year = 2014 AND month = 1 AND day BETWEEN 23 AND 30 AND cache_status = \'hit\' AND http_status IN (\'200\',\'301\',\'302\',\'304\') AND user_agent NOT IN (\'NativeHost\',\'ativeHost\') AND content_type IN (\'text/html\\; charset=utf-8\',\'text/html\\; charset=iso-8859-1\',\'text/html\\; charset=UTF-8','text/html\') GROUP BY ip ORDER BY rand()
-           ) sub1 WHERE count >= 2 LIMIT 50000;\""
-    )
-    
-    #retrieve the dataset as a whole, save it to file.
-    system(paste("hive --auxpath /usr/lib/hcatalog/share/hcatalog/hcatalog-core-0.5.0-cdh4.3.1.jar --database wmf -e \"
-           SELECT
-            db1.dt,
-            db1.ip,
-            db1.uri_host,
-            db1.uri_path,
-            db1.uri_query,
-            db1.referer,
-            db1.user_agent,
-            db1.accept_language
-          FROM wmf.webrequest_mobile db1 INNER JOIN ironholds.distinct_ip db2 ON db1.ip = db2.ip
-          WHERE db1.year = 2014 AND db1.month = 1 AND db1.day BETWEEN 23 AND 30 AND db1.cache_status = \'hit\' AND user_agent NOT IN (\'NativeHost\',\'ativeHost\')
-          AND db1.http_status IN (200,301,302,304) AND db1.content_type IN (\'text/html\\; charset=utf-8\',\'text/html\\; charset=iso-8859-1\',\'text/html\\; charset=UTF-8','text/html\');\" >",mobile_file))
-  }
+  #Retrieve the IPs, save them to a table.
+  system("hive --auxpath /usr/lib/hcatalog/share/hcatalog/hcatalog-core-0.5.0-cdh4.3.1.jar --database wmf -e \"
+         set hive.mapred.mode = nonstrict;
+         INSERT OVERWRITE TABLE ironholds.distinct_ip
+         SELECT distip FROM (
+         SELECT ip AS distip, COUNT(*) as count FROM wmf.webrequest_mobile WHERE year = 2014 AND month = 1 AND day BETWEEN 23 AND 30 AND user_agent NOT IN (\'ativeHost\',\'NativeHost\') AND cache_status = \'hit\' AND http_status IN (\'200\',\'301\',\'302\',\'304\') AND user_agent NOT IN (\'NativeHost\',\'ativeHost\') AND content_type IN (\'text/html\\; charset=utf-8\',\'text/html\\; charset=iso-8859-1\',\'text/html\\; charset=UTF-8','text/html\') GROUP BY ip ORDER BY rand()
+         ) sub1 WHERE count >= 2 LIMIT 50000;\""
+  )
+  
+  #retrieve the dataset as a whole, save it to file.
+  system(paste("hive --auxpath /usr/lib/hcatalog/share/hcatalog/hcatalog-core-0.5.0-cdh4.3.1.jar --database wmf -e \"
+         SELECT
+          db1.dt,
+          db1.ip,
+          db1.uri_host,
+          db1.uri_path,
+          db1.uri_query,
+          db1.referer,
+          db1.user_agent,
+          db1.accept_language
+        FROM wmf.webrequest_mobile db1 INNER JOIN ironholds.distinct_ip db2 ON db1.ip = db2.ip
+        WHERE db1.year = 2014 AND db1.month = 1 AND db1.day BETWEEN 23 AND 30 AND AND db1.user_agent NOT IN (\'ativeHost\',\'NativeHost\') db1.cache_status = \'hit\' AND user_agent NOT IN (\'NativeHost\',\'ativeHost\')
+        AND db1.http_status IN (200,301,302,304) AND db1.content_type IN (\'text/html\\; charset=utf-8\',\'text/html\\; charset=iso-8859-1\',\'text/html\\; charset=UTF-8','text/html\');\" >",mobile_file))
+}
   
   #Read in the file.
   data.df <- read.delim(file = mobile_file,
@@ -46,9 +43,6 @@ data_reader <- function(){
   
   #Eliminate bots
   data.df <- data.df[!grepl(x = data.df$UA, ignore.case = TRUE, pattern = bot_pattern),]
-  
-  #Eliminate the Thai weirdness
-  data.df <- data.df[!data.df$UA %in% c("ativeHost","NativeHost"),]
   
   #Generate SHA-256 unique hashes
   hash_vec <- character(nrow(data.df))
