@@ -1,21 +1,33 @@
 #Load necessary files
 source("config.R")
 source("functions.R")
-sourceCpp("src/Intertime.cpp")
-sourceCpp("src/Totaltime.cpp")
-sourceCpp("src/Fromfirst.cpp")
 
 MobileSessions <- function(){
   
   #Read in data
   data.df <- data_reader()
   
-  #Check metadata
-  logger()
+  #Eliminate bots
+  data.df <- data.df[!grepl(x = data.df$UA, ignore.case = TRUE, pattern = bot_pattern),]
   
-  #Conduct basic analysis and graphing, rework and save
-  analysis()
-
+  #Hash
+  data.df <- hasher(data.df)
+  
+  #Limit to those hashes with >1 article view
+  data.df <- data.df[data.df$IP %in% subset(as.data.frame(table(data.df$IP)), Freq > 1)$Var1,]
+  
+  #Convert timestamps to seconds
+  data.df$timestamp <- as.numeric(strptime(x = data.df$timestamp, format = "%Y-%m-%dT%H:%M:%S"))
+  
+  #Strip unnecessary columns and rename
+  data.df <- data.df[,c("timestamp","IP","URL_host","referer")]
+  names(data.df) <- c("timestamp","hash","URL","referer")
+  
+  #Generate interval data
+  intervals <- lapper(data.df,lapply_inter,file.path(getwd(),"Data","intertime.RData"))
+  
+  #Generate from-first data
+  fromfirst <- lapper(data.df,lapply_first,file.path(getwd(),"Data","fromfirst.RData"))
 }
 
 #Run

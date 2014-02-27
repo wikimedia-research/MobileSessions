@@ -23,9 +23,8 @@ data_reader <- function(){
           db1.user_agent,
           db1.accept_language
         FROM wmf.webrequest_mobile db1 INNER JOIN ironholds.distinct_ip db2 ON db1.ip = db2.ip
-        WHERE db1.year = 2014 AND db1.month = 1 AND db1.day BETWEEN 23 AND 30 AND AND db1.user_agent NOT IN (\'ativeHost\',\'NativeHost\') db1.cache_status = \'hit\' AND user_agent NOT IN (\'NativeHost\',\'ativeHost\')
+        WHERE db1.year = 2014 AND db1.month = 1 AND db1.day BETWEEN 23 AND 30 AND db1.user_agent NOT IN (\'ativeHost\',\'NativeHost\') AND user_agent NOT IN (\'NativeHost\',\'ativeHost\')
         AND db1.http_status IN (200,301,302,304) AND db1.content_type IN (\'text/html\\; charset=utf-8\',\'text/html\\; charset=iso-8859-1\',\'text/html\\; charset=UTF-8','text/html\');\" >",mobile_file))
-}
   
   #Read in the file.
   data.df <- read.delim(file = mobile_file,
@@ -41,104 +40,129 @@ data_reader <- function(){
                                       "UA",
                                       "lang"))
   
-  #Eliminate bots
-  data.df <- data.df[!grepl(x = data.df$UA, ignore.case = TRUE, pattern = bot_pattern),]
-  
-  #Generate SHA-256 unique hashes
-  hash_vec <- character(nrow(data.df))
-  
-  for(i in seq_along(hash_vec)){
-    
-    hash_vec[i] <- digest(object = paste(data.df$IP[i],data.df$lang[i],data.df$UA[i]), algo = "sha256")
-    
-  }
-  
-  #Add the hash vector to the dataset, overwriting IP
-  data.df$IP <- hash_vec
-  
-  #Limit to those hashes with >1 article view
-  data.df <- data.df[data.df$IP %in% subset(as.data.frame(table(data.df$IP)), Freq > 1)$Var1,]
-  
-  #Convert timestamps to seconds
-  data.df$timestamp <- as.numeric(strptime(x = data.df$timestamp, format = "%Y-%m-%dT%H:%M:%S"))
-  
-  #Strip unnecessary columns and rename
-  data.df <- data.df[,c("timestamp","IP","URL_host","referer")]
-  names(data.df) <- c("timestamp","hash","URL","referer")
-  
   #Return
   return(data.df)
 }
 
-#Function for extracting and logging metadata
-logger <- function(){
+#MySQL function
+#Function for querying the db to get data about users
+globalsql = function(IPs_query){
   
-  #Instantiate metadata object
-  metadata.vec <- numeric(3)
+  #The actual querying function
+  rawsql <- function(statement,db_host,db_database){
+    
+    #Open connection to the MySQL DB
+    con <- dbConnect(drv = "MySQL",
+                     username = db_user,
+                     password = db_pass,
+                     host = db_host,
+                     dbname = db_database)
+    
+    QuerySend <- dbSendQuery(con, statement)
+    
+    #Retrieve output of query
+    output <- fetch(QuerySend, n = -1)
+    
+    #Kill connection
+    dbDisconnect(con)
+    
+    #Return output
+    return(output)
+  }
   
-  #How many unique clients do we have?
-  metadata.vec[1] <- length(data.df$hash)
-  names(metadata.vec)[i] <- "Unique client hashes"
+  #Connect to each server...
+  query_results.ls <- lapply(server_list, function(x){
+    
+    #Find out what the available dbs are
+    available.dbs <- rawsql(statement = "SHOW DATABASES;", db_host = x, db_database = NULL)
+    
+    #Filter the available dbs to active wikis
+    available.dbs <- available.dbs$Database[available.dbs$Database %in% active_wikis]
+    
+    #For each one, grab the data the statement requires.
+    #Output object. It has to be a data frame unless we want recursive do.call("rbind"), which I'm considering
+    output.ls <- list()
+    
+    for(i in seq_along(available.dbs)){
+      
+      #Retrieve the data and bind it into the output object
+      output.ls[[(length(output.ls)+1)]] <- rawsql(statement = IPs_query, db_host = x, db_database = available.dbs[i])
+      
+    }
+    
+    #Turn the SQL results into a single data frame
+    output.df <- do.call("rbind",output.ls)
+    
+    #Return
+    return(output.df)
+  })
   
-  #How many pageviews does that come to?
-  metadata.vec[2] <- nrow(data.df)
-  names(metadata.vec)[2] <- "pageviews"
+  #Turn the SQL results into a single data frame and return them
+  return(do.call("rbind",query_results.ls))
   
-  #How many have lost referrers?
-  metadata.vec[3] <- nrow(data.df[data.df$referer == "-",])
-  names(metadata.vec)[3] <- "pageviews with no referer"
-  
-  #Write to file
-  write.table(x = metadata.vec,
-              file = metadata_file,
-              quote = TRUE,
-              sep = "\t",
-              row.names = TRUE,
-              col.names = FALSE)
 }
 
-#Analysis function
-basic_analysis <- function(){
+#Hashing function
+hasher <- function(x){
   
-  #Intertime function
-  lapply_inter <- function(x){
-    
-    #Split out timestamps
-    timestamps <- data.df$timestamp[data.df$hash == x]
-    
-    #Run through C++
-    intervals <- intertime(x = timestamps)
-    
-    #Return
-    return(intervals)
-  }
+  #Generate SHA-256 unique hashes
+  hash_vec <- character(nrow(x))
   
-  #From-first function
-  lapply_first <- function(x){
+  for(i in seq_along(hash_vec)){
     
-    #Split out timestamps
-    timestamps <- data.df$timestamp[data.df$hash == x]
-    
-    #Run through C++
-    first_intervals <- fromfirst(x = timestamps)
-    
-    #Return
-    return(first_intervals)
+    hash_vec[i] <- digest(object = paste(x$IP[i],x$lang[i],x$UA[i]), algo = "sha256")
     
   }
   
-  #Grab interval list and from-first list
-  intervals.ls <- lapply(X = as.list(unique(data.df$hash)), FUN = lapply_inter)
+  #Add the hash vector to the dataset
+  x$IP <- hash_vec
+  
+  #Return
+  return(x)
+  
+}
+
+#Intertime function
+lapply_inter <- function(x){
+  
+  #Run through C++
+  intervals <- intertime(x = data.df$timestamp[data.df$hash == x])
+  
+  #Return
+  return(intervals)
+}
+  
+#From-first function
+lapply_first <- function(x){
+  
+  #Run through C++
+  first_intervals <- fromfirst(x = data.df$timestamp[data.df$hash == x])
+  
+  #Return
+  return(first_intervals)
+  
+}
+  
+#lapply function
+lapper <- function(x,func,filename){
+  
+  #Grab list
+  results.ls <- lapply(X = as.list(unique(x$hash)), FUN = func)
   
   #Save to RData file for future screwin'-with.
-  save(intervals.ls, file = file.path(getwd(),"Data","intervaldata.RData"))
+  save(results.ls, file = filename)
   
   #Unlist and summarise
-  aggregates.df <- as.data.frame(table(unlist(intervals.ls)))
+  aggregates.df <- as.data.frame(table(unlist(results.ls)))
   
   #Change type
   aggregates.df$Var1 <- as.numeric(as.character(aggregates.df$Var1))
   
+  #Return
+  return(aggregates.df)
+  
+}
+
   #Generate a log10 plot and save
   log10_plot <- ggplot(data = aggregates.df, aes(log10(Freq))) +
     geom_area(stat = "bin", fill = "blue") +
@@ -155,8 +179,7 @@ basic_analysis <- function(){
          x = "Seconds",
          y = "Number of requests")
   ggsave(file = file.path(getwd(),"Data","smooth_plot.png"),
-         plot = smooth_plot)
-  
+         plot = smooth_plot)  
   #Smoothed, limited plot
   limited_plot <- ggplot(data = aggregates.df, aes(Var1,Freq)) + 
     geom_smooth() + 
@@ -237,12 +260,27 @@ post_min_analysis <- function(){
          x = "Type",
          y = "Log10 value")
   
-  totaltime_density <- ggplot(output_sd.df,aes(output.vec)) + 
-    geom_density(aes(fill = Type)) +
-    labs(title = "log10 plot of total mobile session times",
+  totaltime_density <- ggplot(output.df,aes(output.vec)) + 
+    geom_density(aes(fill = "blue")) +
+    labs(title = "Total mobile session times",
          x = "Seconds",
          y = "Density") +
     guides(fill=FALSE)
+  ggsave(file = file.path(getwd(),"Data","density.png"),
+         plot = totaltime_density)
+  
+  output_limited <- as.data.frame(output.df[output.df$output.vec <= quantile(output.vec)[names(quantile(output.vec)) == "75%"],])
+  names(output_limited) <- "output"
+  totaltime_density_zoomed <- ggplot(output_limited,aes(output)) + 
+    geom_density(aes(fill = "blue")) +
+    labs(title = "Total mobile session times (>75th quantile)",
+         x = "Seconds",
+         y = "Density") +
+    guides(fill=FALSE) +
+    scale_x_continuous(breaks = seq(1,max(output_limited$output),100))
+  
+  ggsave(file = file.path(getwd(),"Data","density_limited.png"),
+         plot = totaltime_density_zoomed)
   
   #Remove entries more than 2SDs out
   output_sd.df <- output.df[output.df$output.vec <= 2*sd(output.df$output.vec),]
