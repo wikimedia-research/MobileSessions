@@ -5,4 +5,8 @@
 *-Ex.R
 .Rproj.user
 *.Rproj*
+
+#Sensitive data
 *mobile_data.tsv
+*resulting_data.tsv
+*wikidata.tsv
