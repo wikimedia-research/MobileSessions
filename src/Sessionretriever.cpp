@@ -5,8 +5,8 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 int sessionretriever(NumericVector x, int local_minimum) {
   
-  //Instantiate output object
-  int output_object = 0;
+  //Instantiate output object. It has the value of 1 to handle R's indexing.
+  int output_object = 1;
   
   //For each input object...
   for(int i = 0; i < x.size(); ++i) {
@@ -16,6 +16,12 @@ int sessionretriever(NumericVector x, int local_minimum) {
       
       //Increment the output object
       output_object += 1;
+      
+    }
+    else {
+      
+      //When you encounter the first inter-time period above the local minimum, just return the output object.
+      return output_object;
       
     }
     
