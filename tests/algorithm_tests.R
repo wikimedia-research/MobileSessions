@@ -34,7 +34,7 @@ algorithm_tests <- function(){
   entropy <- function(x){
     
     #Instantiate output object
-    entropy.vec <- numeric()
+    entropy.vec <- numeric(13)
     
     #Sample IPs
     entropy.vec[1] <- length(unique(x$IP))
@@ -57,7 +57,7 @@ algorithm_tests <- function(){
       
     }
     entropy.vec[3] <- length(unique(test.vec))
-    names(entropy.vec)[3] <- "Unique IP+UA"
+    names(entropy.vec)[3] <- "Unique IP+UA+lang"
     
     #Compare to desktop data
     sampled.df <- trickstr::samplelogs("/a/squid/archive/sampled/sampled-1000.tsv.log-20140120.gz")
@@ -86,9 +86,9 @@ algorithm_tests <- function(){
     
     #Checks
     entropy.vec[6] <- length(unique(mobile_edits.df$IP))
-    names(entropy.vec)[6] <- "Unique mobile IPs"
+    names(entropy.vec)[6] <- "Unique mobile editor IPs"
     entropy.vec[7] <- length(unique(mobile_edits.df$user))
-    names(entropy.vec)[7]
+    names(entropy.vec)[7] <- "Unique mobile editors"
     
     #Too small. Rats. Module storage it is.
     storage.df <- rawsql(statement = "SELECT event_experimentId AS userID,
@@ -227,7 +227,7 @@ algorithm_tests <- function(){
       
     }))
     entropy.vec[12] <- length(hash_to_UUID)
-    names(entropy.vec)[11] <- "Hashes"
+    names(entropy.vec)[12] <- "Hashes"
     entropy.vec[13] <- length(hash_to_UUID[hash_to_UUID > 1])
     names(entropy.vec)[13] <- "Hashes with more than one distinct UUID associated"
     
