@@ -44,31 +44,31 @@ data_reader <- function(){
   return(data.df)
 }
 
-#MySQL function
+#MySQL functions
+#The actual querying function
+rawsql <- function(statement,db_host,db_database){
+  
+  #Open connection to the MySQL DB
+  con <- dbConnect(drv = "MySQL",
+                   username = db_user,
+                   password = db_pass,
+                   host = db_host,
+                   dbname = db_database)
+  
+  QuerySend <- dbSendQuery(con, statement)
+  
+  #Retrieve output of query
+  output <- fetch(QuerySend, n = -1)
+  
+  #Kill connection
+  dbDisconnect(con)
+  
+  #Return output
+  return(output)
+}
+
 #Function for querying the db to get data about users
 globalsql = function(IPs_query){
-  
-  #The actual querying function
-  rawsql <- function(statement,db_host,db_database){
-    
-    #Open connection to the MySQL DB
-    con <- dbConnect(drv = "MySQL",
-                     username = db_user,
-                     password = db_pass,
-                     host = db_host,
-                     dbname = db_database)
-    
-    QuerySend <- dbSendQuery(con, statement)
-    
-    #Retrieve output of query
-    output <- fetch(QuerySend, n = -1)
-    
-    #Kill connection
-    dbDisconnect(con)
-    
-    #Return output
-    return(output)
-  }
   
   #Connect to each server...
   query_results.ls <- lapply(server_list, function(x){
@@ -115,7 +115,7 @@ hasher <- function(x){
   }
   
   #Add the hash vector to the dataset
-  x$IP <- hash_vec
+  x$hash <- hash_vec
   
   #Return
   return(x)
@@ -123,20 +123,20 @@ hasher <- function(x){
 }
 
 #Intertime function
-lapply_inter <- function(x){
+lapply_inter <- function(x,dataset){
   
   #Run through C++
-  intervals <- intertime(x = data.df$timestamp[data.df$hash == x])
+  intervals <- intertime(x = dataset$timestamp[dataset$hash == x])
   
   #Return
   return(intervals)
 }
   
 #From-first function
-lapply_first <- function(x){
+lapply_first <- function(x,dataset){
   
   #Run through C++
-  first_intervals <- fromfirst(x = data.df$timestamp[data.df$hash == x])
+  first_intervals <- fromfirst(x = dataset$timestamp[dataset$hash == x])
   
   #Return
   return(first_intervals)
@@ -144,10 +144,10 @@ lapply_first <- function(x){
 }
   
 #lapply function
-lapper <- function(x,func,filename){
+lapper <- function(dataset,func,filename){
   
   #Grab list
-  results.ls <- lapply(X = as.list(unique(x$hash)), FUN = func)
+  results.ls <- lapply(X = as.list(unique(dataset$hash)), FUN = func, dataset = dataset)
   
   #Save to RData file for future screwin'-with.
   save(results.ls, file = filename)
