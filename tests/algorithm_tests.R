@@ -34,7 +34,7 @@ algorithm_tests <- function(){
   entropy <- function(x){
     
     #Instantiate output object
-    entropy.vec <- numeric(13)
+    entropy.vec <- numeric(16)
     
     #Sample IPs
     entropy.vec[1] <- length(unique(x$IP))
@@ -104,10 +104,10 @@ algorithm_tests <- function(){
     #Checks
     entropy.vec[8] <- length(unique(storage.df$IP))
     names(entropy.vec)[8] <- "unique ModuleStorage IPs"
-    entropy.vec[8] <- length(unique(storage.df$userID))
-    names(entropy.vec)[8] <- "unique ModuleStorage users"
-    entropy.vec[8] <- nrow(storage.df)
-    names(entropy.vec)[8] <- "ModuleStorage entries"
+    entropy.vec[9] <- length(unique(storage.df$userID))
+    names(entropy.vec)[9] <- "unique ModuleStorage users"
+    entropy.vec[10] <- nrow(storage.df)
+    names(entropy.vec)[10] <- "ModuleStorage entries"
     
     #Work out IP:editor ratio, and vice versa
     ip_to_editor <- unlist(lapply(unique(storage.df$IP),function(x){
@@ -122,10 +122,10 @@ algorithm_tests <- function(){
       
     }))
     
-    entropy.vec[10] <- length(ip_to_editor[ip_to_editor > 1])
-    names(entropy.vec)[10] <- "IPs with multiple UUIDs"
-    entropy.vec[10] <- length(editor_to_ip[editor_to_ip > 1])
-    names(entropy.vec)[11] <- "UUIDs with multiple IPs"
+    entropy.vec[11] <- length(ip_to_editor[ip_to_editor > 1])
+    names(entropy.vec)[11] <- "IPs with multiple UUIDs"
+    entropy.vec[12] <- length(editor_to_ip[editor_to_ip > 1])
+    names(entropy.vec)[12] <- "UUIDs with multiple IPs"
     
     #Plot
     ip_density <- ggplot(as.data.frame(ip_to_editor),aes(ip_to_editor)) +
@@ -202,8 +202,8 @@ algorithm_tests <- function(){
       
     }))
     
-    entropy.vec[11] <- length(session_editor_to_ip[session_editor_to_ip > 1])
-    names(entropy.vec)[11] <- "UUIDs with multiple IPs (first session)"
+    entropy.vec[13] <- length(session_editor_to_ip[session_editor_to_ip > 1])
+    names(entropy.vec)[13] <- "UUIDs with multiple IPs (first session)"
     
     #Hash
     hash.vec <- character(nrow(storage.df))
@@ -226,10 +226,12 @@ algorithm_tests <- function(){
       return(length(unique(storage.df$hash[storage.df$userID == x])))
       
     }))
-    entropy.vec[12] <- length(hash_to_UUID)
-    names(entropy.vec)[12] <- "Hashes"
-    entropy.vec[13] <- length(hash_to_UUID[hash_to_UUID > 1])
-    names(entropy.vec)[13] <- "Hashes with more than one distinct UUID associated"
+    entropy.vec[14] <- length(hash_to_UUID)
+    names(entropy.vec)[14] <- "Hashes"
+    entropy.vec[15] <- length(hash_to_UUID[hash_to_UUID > 1])
+    names(entropy.vec)[15] <- "Hashes with more than one distinct UUID associated"
+    entropy.vec[16] <- length(userID_to_hash[userID_to_hash > 1])
+    names(entropy.vec)[16] <- "UUIDs with more than one distinct hash"
     
     #Save
     write.table(x = entropy.vec,

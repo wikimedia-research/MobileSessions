@@ -1,0 +1,17 @@
+"x"
+"Unique IPs" 9478
+"Unique IP+UA" 20085
+"Unique IP+UA+lang" 20541
+"sampled desktop IPs" 10000
+"Desktop, IP+UA+lang" 11645
+"Unique mobile editor IPs" 912
+"Unique mobile editors" 902
+"unique ModuleStorage IPs" 38367
+"unique ModuleStorage users" 36918
+"ModuleStorage entries" 94444
+"IPs with multiple UUIDs" 1646
+"UUIDs with multiple IPs" 3876
+"UUIDs with multiple IPs (first session)" 281
+"Hashes" 37274
+"Hashes with more than one distinct UUID associated" 292
+"UUIDs with more than one distinct hash" 521
