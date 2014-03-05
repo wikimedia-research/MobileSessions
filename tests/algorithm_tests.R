@@ -335,3 +335,6 @@ algorithm_tests <- function(){
 
 #Run
 algorithm_tests()
+
+#Quit
+q(save = "no")
