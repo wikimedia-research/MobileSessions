@@ -34,7 +34,7 @@ MobileSessions <- function(){
   grapher(fromfirst_data,"first")
   
   #Fire off the session length analysis (change the local minimum if reality somehow alters)
-  sessionlength(fromfirst_data)
+  sessionlength(fromfirst_data,430)
 }
 
 #Run

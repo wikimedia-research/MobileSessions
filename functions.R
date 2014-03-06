@@ -196,18 +196,18 @@ ggsave(file = file.path(getwd(),"Data",paste(datatype,"limited_smooth.png",sep =
 }
 
 #Post-minimum-identification analysis
-post_min_analysis <- function(x, local_minimum){
+sessionlength <- function(x, local_minimum){
   
   #Generate dataset
   results.ls <- lapply(X = as.list(unique(x$hash)), FUN = lapply_first, dataset = x)
   
   #Instantiate output object
-  output.vec <- numeric(length(fromfirst.ls))
+  output.vec <- numeric(length(results.ls))
   
-  for(i in seq_along(fromfirst.ls)){
+  for(i in seq_along(output.vec)){
     
     #Retrieve 'session time' and add it to the output vector.
-    output.vec[i] <- totaltime(x = fromfirst.ls[[i]], local_minimum = local_minimum)
+    output.vec[i] <- totaltime(x = results.ls[[i]], local_minimum = local_minimum)
     
   }
   
@@ -217,49 +217,13 @@ post_min_analysis <- function(x, local_minimum){
   #Dataframe it for ggplot2
   output.df <- as.data.frame(output.vec)
   
-  #Log10 it
-  log10_totaltime <- ggplot(output.df,aes(Type,log10(output.vec))) + 
-    geom_boxplot() +
-    labs(title = "log10 plot of total mobile session times",
-         x = "Type",
-         y = "Log10 value")
-  
   totaltime_density <- ggplot(output.df,aes(output.vec)) + 
-    geom_density(aes(fill = "blue")) +
+    geom_density(fill = "blue") +
     labs(title = "Total mobile session times",
          x = "Seconds",
          y = "Density") +
     guides(fill=FALSE)
   ggsave(file = file.path(getwd(),"Data","density.png"),
          plot = totaltime_density)
-  
-  output_limited <- as.data.frame(output.df[output.df$output.vec <= quantile(output.vec)[names(quantile(output.vec)) == "75%"],])
-  names(output_limited) <- "output"
-  totaltime_density_zoomed <- ggplot(output_limited,aes(output)) + 
-    geom_density(aes(fill = "blue")) +
-    labs(title = "Total mobile session times (>75th quantile)",
-         x = "Seconds",
-         y = "Density") +
-    guides(fill=FALSE) +
-    scale_x_continuous(breaks = seq(1,max(output_limited$output),100))
-  
-  ggsave(file = file.path(getwd(),"Data","density_limited.png"),
-         plot = totaltime_density_zoomed)
-  
-  #Remove entries more than 2SDs out
-  output_sd.df <- output.df[output.df$output.vec <= 2*sd(output.df$output.vec),]
-  log10_totaltime_sd <- ggplot(output_sd.df,aes(Type,log10(output.vec))) + 
-    geom_boxplot() +
-    labs(title = "log10 plot of total mobile session times",
-         x = "Type",
-         y = "Log10 value")
-  
-  #Density plot
-  totaltime_sd_density <- ggplot(output_sd.df,aes(output.vec)) + 
-    geom_density(aes(fill = Type)) +
-    labs(title = "log10 plot of total mobile session times",
-         x = "Type",
-         y = "Log10 value") +
-    guides(fill=FALSE)
   
 }
