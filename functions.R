@@ -217,13 +217,40 @@ sessionlength <- function(x, local_minimum){
   #Dataframe it for ggplot2
   output.df <- as.data.frame(output.vec)
   
+  #What does the total density look like?
   totaltime_density <- ggplot(output.df,aes(output.vec)) + 
     geom_density(fill = "blue") +
     labs(title = "Total mobile session times",
          x = "Seconds",
-         y = "Density") +
-    guides(fill=FALSE)
+         y = "Density")
   ggsave(file = file.path(getwd(),"Data","density.png"),
          plot = totaltime_density)
+  
+  #<75th quantile?
+  quantiles <- quantile(output.vec)
+  output_restricted.df <- as.data.frame(output.df[output.df$output.vec <= quantiles[names(quantiles) == "75%"],])
+  names(output_restricted.df) <- "output"
+  totaltime_density_75 <- ggplot(output_restricted.df,aes(output)) + 
+    geom_density(fill = "blue") +
+    labs(title = "Total mobile session times\n <75th percentile",
+         x = "Seconds",
+         y = "Density")
+  ggsave(file = file.path(getwd(),"Data","density_75.png"),
+         plot = totaltime_density_75)
+  
+  #Log10 bins?
+  totaltime_log10 <- ggplot(output.df,aes(output.vec)) + 
+    geom_density(fill = "blue") +
+    labs(title = "Total mobile session times\nlog10",
+         x = "Seconds (log10)",
+         y = "Density") +
+    scale_x_log10()
+  ggsave(file = file.path(getwd(),"Data","density_log10.png"),
+         plot = totaltime_log10)
+  
+  #Save quantiles. Well, the substantial ones.
+  write.table(x = quantile(output.vec,seq(0,1,0.10)),
+              file = file.path(getwd(),"Data","quantiles.tsv"),
+              sep = "\t")
   
 }
