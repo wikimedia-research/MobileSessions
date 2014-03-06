@@ -31,4 +31,4 @@ server_list <- c("s1-analytics-slave.eqiad.wmnet",
                  "s7-analytics-slave.eqiad.wmnet") #List of MySQL servers
 
 #Regex
-bot_pattern = "(bot|crawl(er)?|http(s?):)"
+bot_pattern = "crawl(er)?"
