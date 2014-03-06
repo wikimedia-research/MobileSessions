@@ -27,12 +27,14 @@ MobileSessions <- function(){
   intervals <- lapper(data.df,lapply_inter,file.path(getwd(),"Data","intertime.RData"))
   
   #Generate from-first data
-  fromfirst <- lapper(data.df,lapply_first,file.path(getwd(),"Data","fromfirst.RData"))
+  fromfirst_data <- lapper(data.df,lapply_first,file.path(getwd(),"Data","fromfirst.RData"))
   
   #Plot
   grapher(intervals,"previous")
-  grapher(intervals,"first")
+  grapher(fromfirst,"first")
   
+  #Fire off the session length analysis (change the local minimum if reality somehow alters)
+  sessionlength(from)
 }
 
 #Run

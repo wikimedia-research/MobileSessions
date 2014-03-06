@@ -191,21 +191,23 @@ grapher <- function(x, datatype){
          y = "Number of requests") +
     scale_x_continuous(breaks = seq(0,3000,100), limits = c(0,3000))
 ggsave(file = file.path(getwd(),"Data",paste(datatype,"limited_smooth.png",sep = "_")),
-       plot = smooth_plot)
+       plot = limited_plot)
   
 }
 
 #Post-minimum-identification analysis
-post_min_analysis <- function(){
+post_min_analysis <- function(x, local_minimum){
   
-  #We saw 400-500 (450) as the local minimum. Cool!
+  #Generate dataset
+  results.ls <- lapply(X = as.list(unique(x$hash)), FUN = lapply_first, dataset = x)
+  
   #Instantiate output object
   output.vec <- numeric(length(fromfirst.ls))
   
   for(i in seq_along(fromfirst.ls)){
     
     #Retrieve 'session time' and add it to the output vector.
-    output.vec[i] <- totaltime(x = fromfirst.ls[[i]], local_minimum = 450)
+    output.vec[i] <- totaltime(x = fromfirst.ls[[i]], local_minimum = local_minimum)
     
   }
   
@@ -214,7 +216,6 @@ post_min_analysis <- function(){
   
   #Dataframe it for ggplot2
   output.df <- as.data.frame(output.vec)
-  output.df$Type <- "raw"
   
   #Log10 it
   log10_totaltime <- ggplot(output.df,aes(Type,log10(output.vec))) + 
