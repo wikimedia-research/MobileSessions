@@ -28,6 +28,11 @@ MobileSessions <- function(){
   
   #Generate from-first data
   fromfirst <- lapper(data.df,lapply_first,file.path(getwd(),"Data","fromfirst.RData"))
+  
+  #Plot
+  grapher(intervals,"previous")
+  grapher(intervals,"first")
+  
 }
 
 #Run

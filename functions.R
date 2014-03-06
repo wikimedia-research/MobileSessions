@@ -177,7 +177,7 @@ grapher <- function(x, datatype){
   #Smoothed plot
   smooth_plot <- ggplot(data = x, aes(Var1,Freq)) + 
     geom_smooth() + 
-    labs(title = paste("Time intervals for mobile web requests, unlimited range\n(",datatype,")"),
+    labs(title = paste("Inter-time periods for mobile web requests, unlimited range\n(",datatype,")"),
          x = "Seconds",
          y = "Number of requests")
   ggsave(file = file.path(getwd(),"Data",paste(datatype,"smooth.png",sep = "_")),
@@ -186,7 +186,7 @@ grapher <- function(x, datatype){
   #Smoothed, limited plot
   limited_plot <- ggplot(data = x, aes(Var1,Freq)) + 
     geom_smooth() + 
-    labs(title = paste("Time intervals for mobile web requests, limited range\n(",datatype,")"),
+    labs(title = paste("Inter-time periods for mobile web requests, limited range\n(",datatype,")"),
          x = "Seconds",
          y = "Number of requests") +
     scale_x_continuous(breaks = seq(0,3000,100), limits = c(0,3000))
