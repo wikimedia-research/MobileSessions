@@ -312,15 +312,25 @@ algorithm_tests <- function(){
     #Hash
     data.df <- hasher(x = x)
     
+    #Limit to those hashes with >1 article view
+    data.df <- data.df[data.df$hash %in% subset(as.data.frame(table(data.df$hash)), Freq > 1)$Var1,]
+    
     #Format timestamps as value in seconds
     data.df$timestamp <- as.numeric(strptime(x = data.df$timestamp, format = "%Y-%m-%dT%H:%M:%S"))
     
     #Work out the from-first values
-    fromfirst <- lapper(data.df,lapply_first,file.path(getwd(),"Data","TestingData","fromfirst.RData"))
+    fromfirst_vals <- lapper(data.df,lapply_first,file.path(getwd(),"Data","TestingData","fromfirst.RData"))
     
     #Work out the interval values
     intervals <- lapper(data.df,lapply_inter,file.path(getwd(),"Data","TestingData","intertime.RData"))
     
+    #Graph
+    grapher(x = fromfirst_vals,
+            folder = "Data/TestingData",
+            datatype = "fromfirst")
+    grapher(x = intervals,
+            folder = "Data/TestingData",
+            datatype = "previous")
   }
   
   #Read it in
@@ -339,9 +349,6 @@ algorithm_tests <- function(){
                                       "lang",
                                       "MIME_type",
                                       "UA"))
-  
-  #Remove null entries (we really need to be escaping/removing tabs in UAs. Safari Mobile 4.0, I'm looking at you)
-  data.df <- data.df[!data.df$IP == "",]
   
   #Work out entropy, data loss and sessions
   entropy(data.df)
