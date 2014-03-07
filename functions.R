@@ -163,7 +163,7 @@ lapper <- function(dataset,func,filename){
   
 }
 
-grapher <- function(x, datatype){
+grapher <- function(x, folder, datatype){
   
   #Generate a log10 plot and save
   log10_plot <- ggplot(data = x, aes(log10(Freq))) +
@@ -171,7 +171,7 @@ grapher <- function(x, datatype){
     labs(title = paste("Log10 plot of time intervals\n(",datatype,")"),
          x = "Log10",
          y = "Number of occurrences")
-  ggsave(file = file.path(getwd(),"Data",paste(datatype,"log10.png",sep = "_")),
+  ggsave(file = file.path(getwd(),folder,paste(datatype,"log10.png",sep = "_")),
          plot = log10_plot)
   
   #Smoothed plot
@@ -180,7 +180,7 @@ grapher <- function(x, datatype){
     labs(title = paste("Inter-time periods for mobile web requests, unlimited range\n(",datatype,")"),
          x = "Seconds",
          y = "Number of requests")
-  ggsave(file = file.path(getwd(),"Data",paste(datatype,"smooth.png",sep = "_")),
+  ggsave(file = file.path(getwd(),folder,paste(datatype,"smooth.png",sep = "_")),
          plot = smooth_plot)
 
   #Smoothed, limited plot
@@ -190,7 +190,7 @@ grapher <- function(x, datatype){
          x = "Seconds",
          y = "Number of requests") +
     scale_x_continuous(breaks = seq(0,3000,100), limits = c(0,3000))
-ggsave(file = file.path(getwd(),"Data",paste(datatype,"limited_smooth.png",sep = "_")),
+ggsave(file = file.path(getwd(),folder,paste(datatype,"limited_smooth.png",sep = "_")),
        plot = limited_plot)
   
 }

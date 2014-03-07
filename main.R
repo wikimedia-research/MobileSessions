@@ -30,8 +30,8 @@ MobileSessions <- function(){
   fromfirst_data <- lapper(data.df,lapply_first,file.path(getwd(),"Data","fromfirst.RData"))
   
   #Plot
-  grapher(intervals,"previous")
-  grapher(fromfirst_data,"first")
+  grapher(intervals,"Data","previous")
+  grapher(fromfirst_data,"Data","first")
   
   #Fire off the session length analysis (change the local minimum if reality somehow alters)
   sessionlength(fromfirst_data,430)
