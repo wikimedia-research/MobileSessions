@@ -63,8 +63,7 @@ data_reader <- function(){
   return(data.df)
 }
 
-#MySQL functions
-#The actual querying function
+#The MySQL querying function
 rawsql <- function(statement,db_host,db_database){
   
   #Open connection to the MySQL DB
@@ -86,7 +85,7 @@ rawsql <- function(statement,db_host,db_database){
   return(output)
 }
 
-#Function for querying the db to get data about users
+#Function for querying all production dbs
 globalsql = function(IPs_query){
   
   #Connect to each server...
@@ -121,20 +120,40 @@ globalsql = function(IPs_query){
   
 }
 
-#Hashing function
-hasher <- function(x){
+#Hashing and filtering function
+filter <- function(x, ts_format = "%Y-%m-%dT%H:%M:%S", prehashed = FALSE){
   
-  #Generate SHA-256 unique hashes
-  hash_vec <- character(nrow(x))
+  #Filter out rows with no timestamp
+  x <- x[!x$timestamp == "",]
   
-  for(i in seq_along(hash_vec)){
+  if(prehashed == FALSE){
     
-    hash_vec[i] <- digest(object = paste(x$IP[i],x$lang[i],x$UA[i]), algo = "sha256")
+    #Eliminate bots
+    x <- x[!grepl(x = x$UA, ignore.case = TRUE, pattern = bot_pattern),]
     
+    #Generate SHA-256 unique hashes
+    hash_vec <- character(nrow(x))
+    
+    for(i in seq_along(hash_vec)){
+      
+      hash_vec[i] <- digest(object = paste(x$IP[i],x$lang[i],x$UA[i]), algo = "sha256")
+      
+    }
+    
+    #Add the hash vector to the dataset
+    x$hash <- hash_vec
   }
   
-  #Add the hash vector to the dataset
-  x$hash <- hash_vec
+  #Limit to those hashes with >1 article view
+  aggs <- as.data.frame(table(x$hash))
+  x <- x[x$hash %in% subset(aggs, Freq > 1)$Var1,]
+  print(nrow(aggs[aggs$Freq == 1,]))
+  
+  #Convert timestamps to seconds
+  x$timestamp <- as.numeric(strptime(x = x$timestamp, format = ts_format))
+  
+  #Strip unnecessary columns
+  x <- x[,c("timestamp","hash")]
   
   #Return
   return(x)
@@ -163,7 +182,7 @@ lapply_first <- function(x,dataset){
 }
   
 #lapply function
-lapper <- function(dataset,func,filename){
+lapper <- function(dataset, func, filename){
   
   #Grab list
   results.ls <- lapply(X = as.list(unique(dataset$hash)), FUN = func, dataset = dataset)
@@ -176,12 +195,13 @@ lapper <- function(dataset,func,filename){
   
   #Change type
   aggregates.df$Var1 <- as.numeric(as.character(aggregates.df$Var1))
-  
+
   #Return
-  return(aggregates.df)
-  
+  return(list(results.ls,aggregates.df))
+
 }
 
+#Initial graphing
 grapher <- function(x, folder, datatype){
   
   #Generate a log10 plot and save
@@ -215,18 +235,15 @@ ggsave(file = file.path(getwd(),folder,paste(datatype,"limited_smooth.png",sep =
 }
 
 #Post-minimum-identification analysis
-sessionlength <- function(x, local_minimum){
-  
-  #Generate dataset
-  results.ls <- lapply(X = as.list(unique(x$hash)), FUN = lapply_first, dataset = x)
+sessionlength <- function(x, y, local_minimum, datatype){
   
   #Instantiate output object
-  output.vec <- numeric(length(results.ls))
+  output.vec <- numeric(length = length(x))
   
   for(i in seq_along(output.vec)){
     
     #Retrieve 'session time' and add it to the output vector.
-    output.vec[i] <- totaltime(x = results.ls[[i]], local_minimum = local_minimum)
+    output.vec[i] <- totaltime(x = x[[i]], local_minimum = local_minimum)
     
   }
   
@@ -237,39 +254,100 @@ sessionlength <- function(x, local_minimum){
   output.df <- as.data.frame(output.vec)
   
   #What does the total density look like?
-  totaltime_density <- ggplot(output.df,aes(output.vec)) + 
+  totaltime_density <- ggplot(data = output.df, aes(x = output.vec)) + 
     geom_density(fill = "blue") +
-    labs(title = "Total mobile session times",
+    labs(title = paste("Total mobile session times\n",datatype),
          x = "Seconds",
          y = "Density")
-  ggsave(file = file.path(getwd(),"Data","density.png"),
+  ggsave(file = file.path(getwd(),"Data",paste(datatype,"density.png",sep = "_")),
          plot = totaltime_density)
   
   #<75th quantile?
   quantiles <- quantile(output.vec)
   output_restricted.df <- as.data.frame(output.df[output.df$output.vec <= quantiles[names(quantiles) == "75%"],])
   names(output_restricted.df) <- "output"
-  totaltime_density_75 <- ggplot(output_restricted.df,aes(output)) + 
+  totaltime_density_75 <- ggplot(data = output_restricted.df, aes(x = output)) + 
     geom_density(fill = "blue") +
-    labs(title = "Total mobile session times\n <75th percentile",
+    labs(title = paste("Total mobile session times\n <75th percentile,",datatype),
          x = "Seconds",
          y = "Density")
-  ggsave(file = file.path(getwd(),"Data","density_75.png"),
+  ggsave(file = file.path(getwd(),"Data",paste(datatype,"density_75.png",sep = "_")),
          plot = totaltime_density_75)
   
   #Log10 bins?
-  totaltime_log10 <- ggplot(output.df,aes(output.vec)) + 
+  totaltime_log10 <- ggplot(data = output.df, aes(x = output.vec)) + 
     geom_density(fill = "blue") +
-    labs(title = "Total mobile session times\nlog10",
+    labs(title = paste("Total mobile session times\nlog10,",datatype),
          x = "Seconds (log10)",
          y = "Density") +
     scale_x_log10()
-  ggsave(file = file.path(getwd(),"Data","density_log10.png"),
+  ggsave(file = file.path(getwd(),"Data",paste(datatype,"density_log10.png",sep = "_")),
          plot = totaltime_log10)
   
   #Save quantiles. Well, the substantial ones.
   write.table(x = quantile(output.vec,seq(0,1,0.10)),
-              file = file.path(getwd(),"Data","quantiles.tsv"),
+              file = file.path(getwd(),"Data",paste(datatype,"quantiles.tsv",sep = "_")),
               sep = "\t")
   
+  #Work out the time spent on each page
+  in_session_intertime <- unlist(lapply(y, function(x,local_minimum){
+    
+    #Output object
+    output <- numeric()
+    
+    #Check for errors
+    if(sum(is.na(x)) == 0){
+      
+      #For each element
+      for(i in seq_along(x)){
+        
+        #If the element < the local minimum..
+        if(x[i] <= local_minimum){
+          
+          #Append it to the output
+          output[i] <- x[i]
+          
+        } else {
+          
+          #Return when you encounter the first element above the local minimum
+          return(output)
+          
+        }
+      }
+      
+      #If you don't encounter any, return at the end
+      return(output)
+    }
+  }, local_minimum = local_minimum))
+  
+  #Save
+  save(in_session_intertime, file = file.path(getwd(),"Data",paste(datatype,"in_session_intertime.RData")))
+  
+  #Format and Visualise
+  box.df <- as.data.frame(in_session_intertime)
+  box.df$type <- "Data"
+  error_bar_plot <- ggplot(data = box.df,
+                           aes(type,in_session_intertime)) +
+    geom_boxplot(aes(fill = type)) +
+    theme(axis.ticks = element_blank(), axis.text.x = element_blank()) +
+    labs(title = paste("Time spent on each page, Mobile readers\n",datatype,sep = ""),
+         x = "",
+         y = "Seconds") +
+    guides(fill=FALSE) +
+    scale_y_continuous(breaks = seq(0,max(box.df$in_session_intertime),25))
+  ggsave(file = file.path(getwd(),"Data",paste(datatype,"boxplot.png",sep = "_")),
+         plot = error_bar_plot)
+  
+  #Density
+  intertime_density_plot <- ggplot(data = box.df, aes(in_session_intertime)) +
+    geom_density(fill = "blue") +
+    labs(title = paste("Time spent on each page, Mobile readers\n",datatype))
+  ggsave(file = file.path(getwd(),"Data",paste(datatype,"intertime_density.png",sep = "_")),
+         plot = intertime_density_plot)
+  
+  #Save quantiles
+  write.table(x = quantile(in_session_intertime,seq(0,1,0.10)),
+              file = file.path(getwd(),"Data",paste(datatype,"perpage_quantiles.tsv",sep = "_")),
+              sep = "\t")
+    
 }

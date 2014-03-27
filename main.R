@@ -26,34 +26,40 @@ MobileSessions <- function(){
   #Read in data
   data.df <- data_reader()
   
-  #Eliminate bots
-  data.df <- data.df[!grepl(x = data.df$UA, ignore.case = TRUE, pattern = bot_pattern),]
-  
-  #Hash
-  data.df <- hasher(data.df)
-  
-  #Limit to those hashes with >1 article view
-  data.df <- data.df[data.df$hash %in% subset(as.data.frame(table(data.df$hash)), Freq > 1)$Var1,]
-  
-  #Convert timestamps to seconds
-  data.df$timestamp <- as.numeric(strptime(x = data.df$timestamp, format = "%Y-%m-%dT%H:%M:%S"))
-  
-  #Strip unnecessary columns and rename
-  data.df <- data.df[,c("timestamp","IP","URL_host","referer")]
-  names(data.df) <- c("timestamp","hash","URL","referer")
+  #Filter and hash
+  data.df <- filter(x = data.df)
   
   #Generate interval data
-  intervals <- lapper(data.df,lapply_inter,file.path(getwd(),"Data","intertime.RData"))
+  intervals <- lapper(dataset = data.df, func = lapply_inter, filename = file.path(getwd(),"Data","intertime.RData"))
   
   #Generate from-first data
-  fromfirst_data <- lapper(data.df,lapply_first,file.path(getwd(),"Data","fromfirst.RData"))
+  fromfirst_data <- lapper(dataset = data.df, func = lapply_first, filename = file.path(getwd(),"Data","fromfirst.RData"), ret_both = TRUE)
   
   #Plot
-  grapher(intervals,"Data","previous")
-  grapher(fromfirst_data,"Data","first")
+  grapher(x = intervals[[2]], folder = "Data", datatype = "previous")
+  grapher(x = fromfirst_data[[2]], folder = "Data", datatype = "first")
   
   #Fire off the session length analysis (change the local minimum if reality somehow alters)
-  sessionlength(fromfirst_data,430)
+  sessionlength(x = fromfirst_data[[1]], y = intervals[[1]], local_minimum =  430, datatype = "RequestLogs")
+  
+  #Check out what ModuleStorage's dataset is doing
+  MSdata.df <- rawsql(db_host = "s1-analytics-slave.eqiad.wmnet",
+                      db_database = "log",
+                      statement = "SELECT event_experimentId AS hash,
+                      timestamp
+                      FROM ModuleStorage_6978194
+                      WHERE left(timestamp,8) BETWEEN '20140116' AND '20140122'
+                      AND event_mobileMode IN ('stable','beta','alpha');")
+  
+  #Filter it - no hashing is needed.
+  MSdata.df <- filter(x = MSdata.df, ts_format = "%Y%m%d%H%M%S", prehashed = TRUE)
+  
+  #Generate interval data and from-first data
+  MS_intervals <- lapper(dataset = MSdata.df, func = lapply_inter, filename = file.path(getwd(),"Data","MS_intertime.RData"))
+  MS_fromfirst <- lapper(dataset = MSdata.df, func = lapply_first, filename = file.path(getwd(),"Data","MS_fromfirst.RData"))
+  
+  sessionlength(x = MS_fromfirst[[1]], y = MS_intervals[[1]], local_minimum =  430, datatype = "ModuleStorage")
+  
 }
 
 #Run
